@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mazumder Ledger (maskable)">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <!-- full-bleed background; all artwork sits inside the central 80% safe zone -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(256 256) scale(.74) translate(-256 -256)">
+    <g stroke="#FFFFFF" stroke-opacity=".16" stroke-width="10" stroke-linecap="round">
+      <path d="M92 410H420"/><path d="M92 450H340"/>
+    </g>
+    <g fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M168 146H350"/>
+      <path d="M168 210H350"/>
+      <path d="M196 146H262a62 62 0 0 1 0 124H196L324 366"/>
+    </g>
+  </g>
+</svg>
