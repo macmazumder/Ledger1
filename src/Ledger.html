@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mazumder Infotech — Ledger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<meta name="format-detection" content="telephone=no">
+<meta name="application-name" content="Mazumder Ledger">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#F1F3F8; --paper-card:#FFFFFF; --ink:#111827; --cover:#0F172A; --cover-dark:#1E293B;
+    --gold:#4F46E5; --gold-soft:#E0E7FF; --positive:#10B981; --negative:#EF4444; --rule:#E5E7EB; --muted:#6B7280;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:linear-gradient(160deg,#F8F9FC 0%,#F1F3F8 45%,#ECEEF5 100%); background-attachment:fixed; color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  .topbar{
+    max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--rule); flex-wrap:wrap; gap:10px;
+    position:sticky; top:0; z-index:40; background:rgba(255,255,255,.75); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  }
+  .brand-row{display:flex; align-items:center; gap:10px;}
+  .brand-row .eyebrow{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+  .brand-row h1{font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin:0; color:var(--cover-dark);}
+  .toolbar-actions{display:flex; align-items:center; gap:8px;}
+  .btn{background:var(--cover); color:#FFFFFF; border:none; border-radius:6px; padding:9px 16px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;}
+  .btn:hover{background:var(--cover-dark);}
+  .btn.outline{background:transparent; color:var(--cover-dark); border:1px solid var(--cover); }
+  .btn.outline:hover{background:var(--cover); color:#fff;}
+  .btn.ghost{background:transparent; color:var(--negative); border:1px solid var(--rule); padding:6px 10px; font-size:12px;}
+  .btn.small{padding:6px 12px; font-size:12px;}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .pending-row{opacity:.5;}
+  .unsaved-row{background:rgba(245,158,11,.16);}
+  .pending-row td, .pending-row.person-row{font-style:italic;}
+  .save-status{font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; display:flex; align-items:center; gap:5px;}
+  .save-status .dot{width:7px;height:7px;border-radius:50%; background:var(--positive);}
+  .save-status.err .dot{background:var(--negative);}
+  .save-status.busy .dot{background:#F59E0B;}
+
+  .app{display:flex; max-width:1180px; margin:0 auto; min-height:600px;}
+  .sidebar{width:190px; flex-shrink:0; background:var(--cover); padding:20px 0;}
+  .tabs{list-style:none; margin:0; padding:0;}
+  .tab{position:relative; padding:12px 18px 12px 20px; color:#94A3B8; font-size:13.5px; font-weight:500; cursor:pointer; border-left:3px solid transparent; transition:background .15s,color .15s;}
+  .tab:hover{background:rgba(255,255,255,.06);}
+  .tab.active{background:var(--paper-card); color:var(--cover-dark); border-left:3px solid var(--gold); font-weight:600; border-top-left-radius:8px; border-bottom-left-radius:8px;}
+  .tab .n{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--gold-soft); margin-right:8px;}
+  .tab.active .n{color:var(--gold);}
+
+  .main{flex:1; background:rgba(255,255,255,.5); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); position:relative; padding:28px 34px 50px 34px; min-height:600px;}
+  .main > *{position:relative; z-index:1;}
+
+  h2.section-title{font-family:'Inter',sans-serif; font-size:22px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px 0; color:var(--ink);}
+  .section-sub{color:var(--muted); font-size:12.5px; margin:0 0 20px 0;}
+
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  .card{background:rgba(255,255,255,.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.7); box-shadow:0 6px 18px rgba(31,46,40,.07); border-radius:10px; padding:14px 16px; transition:transform .15s, box-shadow .15s;}
+  .card:hover{transform:translateY(-2px); box-shadow:0 10px 26px rgba(31,46,40,.12);}
+  .card .label{font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-weight:600;}
+  .card .value{font-family:'IBM Plex Mono',monospace; font-size:21px; font-weight:600; margin-top:6px;}
+  .card .value.pos{color:var(--positive);} .card .value.neg{color:var(--negative);}
+
+  .chart-box{background:rgba(255,255,255,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.8); box-shadow:0 8px 24px rgba(15,23,42,.08); border-radius:14px; padding:20px 22px; margin-bottom:24px; position:relative;}
+  .chart-box-glow{background:linear-gradient(150deg, rgba(79,70,229,.06), rgba(16,185,129,.05) 55%, rgba(255,255,255,.6)); position:relative; overflow:hidden;}
+  .chart-box-glow::before{content:""; position:absolute; top:-60px; right:-60px; width:220px; height:220px; background:radial-gradient(circle, rgba(79,70,229,.15), transparent 70%); border-radius:50%; pointer-events:none;}
+  .chart-svg-wrap{position:relative;}
+  .chart-tooltip{display:none; position:absolute; background:rgba(15,23,42,.94); color:#fff; padding:7px 11px; border-radius:8px; font-size:11.5px; font-family:'IBM Plex Mono',monospace; line-height:1.5; pointer-events:none; z-index:20; box-shadow:0 6px 18px rgba(0,0,0,.25); white-space:nowrap;}
+
+  .card{position:relative; overflow:hidden;}
+  .card::before{content:""; position:absolute; top:0; left:0; right:0; height:3px;}
+  .card.accent-indigo::before{background:linear-gradient(90deg,#6366F1,#818CF8);}
+  .card.accent-emerald::before{background:linear-gradient(90deg,#10B981,#34D399);}
+  .card.accent-red::before{background:linear-gradient(90deg,#EF4444,#F87171);}
+  .card.accent-amber::before{background:linear-gradient(90deg,#F59E0B,#FBBF24);}
+  .card.accent-indigo{background:linear-gradient(160deg, rgba(238,242,255,.75), rgba(255,255,255,.7));}
+  .card.accent-emerald{background:linear-gradient(160deg, rgba(209,250,229,.6), rgba(255,255,255,.7));}
+  .card.accent-red{background:linear-gradient(160deg, rgba(254,226,226,.6), rgba(255,255,255,.7));}
+  .card.accent-amber{background:linear-gradient(160deg, rgba(254,243,199,.6), rgba(255,255,255,.7));}
+  .chart-box .chart-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .chart-box h3{font-family:'Inter',sans-serif; font-size:15px; margin:0; font-weight:700; color:var(--ink);}
+  .legend{display:flex; gap:16px; font-size:11.5px; color:var(--muted);}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dot2{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  .entry-form{background:rgba(255,255,255,.65); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.75); box-shadow:0 4px 14px rgba(31,46,40,.06); border-radius:10px; padding:16px 18px; display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:20px;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600;}
+  .field input, .field select{border:1px solid var(--rule); border-radius:4px; padding:8px 10px; font-family:'Inter',sans-serif; font-size:13px; background:#fff; color:var(--ink); min-width:120px;}
+  .field input:focus, .field select:focus{outline:2px solid var(--gold-soft); outline-offset:1px;}
+  .date-input-row{display:flex; align-items:center; gap:6px;}
+  .date-input-row .date-field{min-width:110px;}
+  .date-native{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
+  .date-cal-btn{flex-shrink:0; width:34px; height:34px; border:1px solid var(--rule); border-radius:4px; background:#fff; cursor:pointer; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;}
+  .date-cal-btn:hover{background:var(--gold-soft); border-color:var(--gold);}
+
+  .table-wrap{width:100%; overflow-x:auto; border-radius:10px;}
+  table{width:100%; border-collapse:collapse; background:rgba(255,255,255,.7); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid var(--rule); border-radius:10px; overflow:hidden; min-width:560px;}
+  thead th{text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--rule); background:rgba(224,231,255,.55);}
+  tbody td{padding:9px 12px; font-size:13px; border-bottom:1px solid var(--rule);}
+  tbody tr:last-child td{border-bottom:none;}
+  td.num, th.num{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  .pos-text{color:var(--positive); font-weight:600;} .neg-text{color:var(--negative); font-weight:600;}
+  .empty-row td{color:var(--muted); font-style:italic; text-align:center; padding:20px;}
+  .totals-row td{font-weight:700; background:rgba(224,231,255,.6); border-top:2px solid var(--gold-soft);}
+
+  .badge{display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:700; letter-spacing:.02em;}
+  .badge.in{background:rgba(16,185,129,.14); color:var(--positive);}
+  .badge.out{background:rgba(239,68,68,.12); color:var(--negative);}
+  .badge.neutral{background:rgba(79,70,229,.12); color:var(--gold);}
+  .mini-tag{font-size:10.5px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  .people-grid{display:grid; grid-template-columns:1fr 1.6fr; gap:18px;}
+  .people-list{background:rgba(255,255,255,.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid var(--rule); border-radius:10px; overflow:hidden; align-self:start;}
+  .person-row{padding:11px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--rule); cursor:pointer; font-size:13px;}
+  .person-row:hover{background:rgba(224,231,255,.45);}
+  .person-row.active{background:var(--gold-soft); font-weight:600;}
+  .person-row:last-child{border-bottom:none;}
+
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
+  select.month-select{border:1px solid var(--rule); border-radius:4px; padding:7px 10px; font-family:'Inter'; font-size:13px; background:#fff;}
+  .mono-input{width:88px; text-align:right; border:1px solid var(--rule); border-radius:4px; padding:5px 7px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:#fff;}
+  .sub-label{font-size:10px; color:var(--muted); display:block; margin-top:2px;}
+  .note-box{background:rgba(255,255,255,.5); border:1px dashed var(--gold-soft); border-radius:6px; padding:10px 14px; font-size:12px; color:var(--muted); margin-bottom:18px;}
+  #fileInput{display:none;}
+
+  .month-block{background:rgba(255,255,255,.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.7); border-radius:12px; padding:16px 18px 6px; margin-bottom:16px; box-shadow:0 6px 18px rgba(31,46,40,.06);}
+  .month-block h3{font-family:'Inter',sans-serif; margin:0 0 10px 0; font-size:15px; font-weight:700; color:var(--ink);}
+  .mo-row{display:grid; grid-template-columns:90px 1fr 90px; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--rule); font-size:12.5px;}
+  .mo-row:last-child{border-bottom:none;}
+  .mo-bar-track{height:8px; border-radius:5px; background:#E5E7EB; overflow:hidden; display:flex;}
+  .mo-bar-in{height:100%; background:linear-gradient(90deg,var(--positive),#34D399);}
+  .mo-bar-out{height:100%; background:linear-gradient(90deg,var(--negative),#F87171);}
+  .mo-net{text-align:right; font-family:'IBM Plex Mono',monospace; font-weight:700;}
+
+  .pill-select{display:flex; flex-wrap:wrap; gap:6px;}
+  .pill-opt{padding:6px 12px; border-radius:20px; border:1px solid var(--rule); background:#fff; font-size:12px; cursor:pointer; user-select:none; color:var(--muted);}
+  .pill-opt.active{background:var(--cover); border-color:var(--cover); color:#fff; font-weight:600;}
+
+  .field.full{width:100%;}
+  .field.full textarea, .field.full input{width:100%;}
+
+  @media (max-width: 760px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%; display:flex; overflow-x:auto; padding:10px 8px; -webkit-overflow-scrolling:touch;}
+    .tabs{display:flex; gap:2px;}
+    .tab{white-space:nowrap; padding:9px 13px; border-left:none; border-bottom:3px solid transparent; border-radius:6px 6px 0 0;}
+    .tab.active{border-left:none; border-bottom:3px solid var(--gold); border-radius:6px 6px 0 0;}
+    .cards{grid-template-columns:repeat(2,1fr); gap:10px;}
+    .people-grid{grid-template-columns:1fr;}
+    .main{padding:18px 14px 40px 14px;}
+    .topbar{flex-direction:column; align-items:flex-start; padding:12px 14px;}
+    .toolbar-actions{width:100%; flex-wrap:wrap;}
+    .toolbar-actions .btn, .toolbar-actions .save-status{flex:1 1 auto; text-align:center; justify-content:center;}
+  }
+  @media (max-width: 480px){
+    h2.section-title{font-size:19px;}
+    .cards{grid-template-columns:1fr;}
+    .card .value{font-size:18px;}
+    .entry-form{flex-direction:column; align-items:stretch; padding:14px;}
+    .entry-form .field{width:100%;}
+    .entry-form .field input, .entry-form .field select{width:100%; min-width:0;}
+    .entry-form button{width:100%;}
+    thead th, tbody td{padding:7px 8px; font-size:12px;}
+    .mo-row{grid-template-columns:70px 1fr 76px; font-size:11.5px;}
+    .chart-box{padding:14px 12px;}
+  }
+  /* ===== Phase 5: desktop-first polish, mobile safe-areas, install/lock/banners ===== */
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  body{padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right); padding-bottom:env(safe-area-inset-bottom);}
+  .topbar{padding-top:max(16px, env(safe-area-inset-top));}
+  button, .tab, .pill-opt, .date-cal-btn, .person-row{touch-action:manipulation;}
+  .btn:focus-visible, .tab:focus-visible, input:focus-visible, select:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .banner{display:none; max-width:1180px; margin:0 auto; padding:8px 20px; font-size:12.5px; align-items:center; gap:12px; flex-wrap:wrap;}
+  #offlineBanner{background:#FEF3C7; color:#92400E;}
+  #updateBanner{background:#E0E7FF; color:#3730A3;}
+  .banner .btn{padding:4px 10px; font-size:12px;}
+  #lockOverlay{position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; background:linear-gradient(160deg,#0F172A 0%,#1E293B 60%,#312E81 100%); overflow:auto;}
+  .lock-card{background:#fff; border-radius:16px; padding:26px 26px 22px; width:100%; max-width:430px; box-shadow:0 20px 60px rgba(0,0,0,.4);}
+  .lock-card h2{margin:0 0 4px; font-size:20px;} .lock-card p{margin:0 0 16px; font-size:12.5px; color:var(--muted);}
+  .lock-card .field{margin-bottom:12px;} .lock-card .field input{width:100%;}
+  .lock-card .err{color:var(--negative); font-size:12.5px; min-height:18px; margin:2px 0 8px;}
+  .lock-card .linkbtn{background:none; border:none; color:var(--muted); font-size:11.5px; text-decoration:underline; cursor:pointer; padding:0; margin-top:12px;}
+  @media (min-width:1280px){
+    .topbar, .app, .banner{max-width:1480px;}
+    .sidebar{width:220px;}
+    .main{padding:32px 44px 60px;}
+    .cards{gap:18px;}
+    tbody td{padding:10px 14px;}
+  }
+  @media (min-width:1700px){ .topbar, .app, .banner{max-width:1680px;} }
+  @media (hover:none){ .card:hover{transform:none; box-shadow:0 6px 18px rgba(31,46,40,.07);} }
+  @media (max-width:760px){
+    .field input, .field select, .mono-input, select.month-select, .lock-card .field input{font-size:16px;} /* stops iOS zoom-on-focus */
+    .btn, .tab{min-height:40px;} .btn.small{min-height:36px;}
+    .banner{padding:8px 14px;}
+  }
+  @media print{
+    .topbar, .sidebar, .entry-form, #diagFoot, #toast, .banner, #lockOverlay, .btn, .toolbar .pill-select, details{display:none !important;}
+    body{background:#fff; padding:0;} .app{display:block; max-width:none;} .main{padding:0; background:#fff; backdrop-filter:none;}
+    table{min-width:0; backdrop-filter:none;} .card, .chart-box, .month-block{box-shadow:none; backdrop-filter:none;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand-row">
+    <div>
+      <div class="eyebrow">Private Ledger</div>
+      <h1>Mazumder Infotech</h1>
+    </div>
+  </div>
+  <div class="toolbar-actions">
+    <span class="save-status" id="saveStatus"><span class="dot"></span><span id="saveText">Loading…</span></span>
+    <span class="mini-tag" id="verTag"></span>
+    <span class="mini-tag" id="pendTag" style="color:#B45309;"></span>
+    <button class="btn outline small" id="retryBtn" style="display:none; color:#B45309; border-color:#B45309;"></button>
+    <button class="btn outline small" id="refreshBtn">🔄 Refresh</button>
+    <button class="btn outline small" id="exportBtn">⬇ Export to Excel</button>
+    <button class="btn outline small" id="csvBtn">📄 CSV</button>
+    <button class="btn outline small" id="importBtn">⬆ Import Excel</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <button class="btn outline small" id="installBtn" style="display:none;">⬇ Install app</button>
+    <button class="btn outline small" id="lockBtn" style="display:none;" title="PIN se lock karo">🔒 Lock</button>
+  </div>
+</div>
+<div id="offlineBanner" class="banner"><span id="offlineText"></span><button class="btn outline small" id="reconnectBtn">Reconnect</button></div>
+<div id="updateBanner" class="banner"><span>Naya version available hai.</span><button class="btn small" id="updateBtn">Reload</button></div>
+<div class="app">
+  <div class="sidebar">
+    <ul class="tabs" id="tabs">
+      <li class="tab active" data-tab="dashboard" title="Alt+1"><span class="n">01</span>Dashboard</li>
+      <li class="tab" data-tab="wallets" title="Alt+2"><span class="n">02</span>Wallets</li>
+      <li class="tab" data-tab="people" title="Alt+3"><span class="n">03</span>People Ledger</li>
+      <li class="tab" data-tab="cards" title="Alt+4"><span class="n">04</span>Credit Card</li>
+      <li class="tab" data-tab="expenses" title="Alt+5"><span class="n">05</span>Expenses</li>
+      <li class="tab" data-tab="daily" title="Alt+6"><span class="n">06</span>Daily Ledger</li>
+      <li class="tab" data-tab="monthly" title="Alt+7"><span class="n">07</span>Monthly Summary</li>
+    </ul>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+<div id="diagFoot" class="mini-tag" style="text-align:center; padding:8px 0 16px;"></div>
+<div id="toast" style="display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,.94); color:#fff; padding:9px 16px; border-radius:20px; font-size:12.5px; z-index:99;"></div>
+
+<script>
+const r2 = n => Math.round((Number(n)||0)*100)/100; // kills 0.1+0.2 style float noise
+const money = n => { n = r2(n); const frac = Math.abs(n % 1) > 0; return (n<0?'-':'') + '₹' + Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:frac?2:0, maximumFractionDigits:2}); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const pad2 = n => String(n).padStart(2,'0');
+const localDateStr = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; // LOCAL date (the old toISOString() was UTC: wrong 12am-5:30am IST)
+const todayStr = () => localDateStr(new Date());
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const escapeHtml = s => s===undefined||s===null ? '' : String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const h = escapeHtml; // short alias for every dynamic value inserted into HTML
+
+/* ---------- Typable date field — auto-inserts dashes as you type digits ---------- */
+function toDisplayDate(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : (iso||'');
+}
+function dateFieldHTML(name, value, label){
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(value||'') ? value : todayStr();
+  return `<div class="field"><label>${label||'Date'}</label>
+    <div class="date-input-row">
+      <input type="text" class="date-field" name="${name}" inputmode="numeric" autocomplete="off" placeholder="DD-MM-YYYY" value="${escapeHtml(toDisplayDate(value))}" required>
+      <input type="date" class="date-native" tabindex="-1" aria-hidden="true" value="${escapeHtml(iso)}">
+      <button type="button" class="date-cal-btn" title="Pick date from calendar" aria-label="Pick date from calendar">📅</button>
+    </div>
+  </div>`;
+}
+function isRealIsoDate(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s||'')); if(!m) return false;
+  const y=+m[1], mo=+m[2], d=+m[3];
+  if(y<2000||y>2100||mo<1||mo>12||d<1) return false;
+  return d <= new Date(Date.UTC(y, mo, 0)).getUTCDate();
+}
+function parseDateStrict(str){ const iso = normalizeDate(str); return isRealIsoDate(iso) ? iso : null; }
+function requireDate(str){
+  const d = parseDateStrict(str);
+  if(!d) throw Object.assign(new Error('bad date'), {userMessage:'Date galat hai — DD-MM-YYYY me sahi tareekh daalo (saal 2000–2100).'});
+  return d;
+}
+function normalizeDate(str){
+  str = (str||'').trim();
+  let m = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)){ const [y,mo,d]=str.split('-'); return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`; }
+  m = str.match(/^(\d{2})(\d{2})(\d{4})$/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  m = str.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return str;
+}
+function wireDateFields(root){
+  (root||document).querySelectorAll('.date-field').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const caret = inp.selectionStart===null ? inp.value.length : inp.selectionStart;
+      const digitsBeforeCaret = inp.value.slice(0, caret).replace(/\D/g,'').length;
+      let digits = inp.value.replace(/\D/g,'').slice(0,8);
+      let out = digits;
+      if(digits.length>4) out = digits.slice(0,2)+'-'+digits.slice(2,4)+'-'+digits.slice(4);
+      else if(digits.length>2) out = digits.slice(0,2)+'-'+digits.slice(2);
+      inp.value = out;
+      let newPos = 0, seen = 0;
+      while(newPos < out.length && seen < digitsBeforeCaret){
+        if(/\d/.test(out[newPos])) seen++;
+        newPos++;
+      }
+      inp.setSelectionRange(newPos, newPos);
+    });
+  });
+  (root||document).querySelectorAll('.date-input-row').forEach(row=>{
+    const textInp = row.querySelector('.date-field');
+    const nativeInp = row.querySelector('.date-native');
+    const btn = row.querySelector('.date-cal-btn');
+    if(!textInp || !nativeInp || !btn) return;
+    textInp.addEventListener('input', ()=>{
+      const iso = normalizeDate(textInp.value);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) nativeInp.value = iso;
+    });
+    btn.addEventListener('click', ()=>{
+      if(typeof nativeInp.showPicker === 'function'){
+        try{ nativeInp.showPicker(); return; }catch(e){}
+      }
+      nativeInp.focus();
+      nativeInp.click();
+    });
+    nativeInp.addEventListener('change', ()=>{
+      if(nativeInp.value){
+        textInp.value = toDisplayDate(nativeInp.value);
+        textInp.dispatchEvent(new Event('input'));
+        textInp.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+}
+function confirmDelete(msg){ return confirm(msg || 'Ye entry hamesha ke liye delete ho jayegi. Pakka delete karna hai?'); }
+
+/* ---------- Google Sheets backed persistence (replaces window.storage / localStorage / Firebase) ---------- */
+/* Two ways to reach the Sheet:
+ *  - inside Apps Script (sidebar / dialog / owner web app): google.script.run, Google login = access control
+ *  - as a hosted PWA (index.html on GitHub Pages / Netlify): HTTPS POST to the "Anyone" web app, protected by a token
+ *    that is kept AES-GCM-encrypted under the user's PIN. */
+const IN_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+const API = {url:'', token:'', key:null};
+const isLocked = () => !IN_APPS_SCRIPT && !API.token;
+let pairingNow = false;
+function handleUnauthorized(){ // token was rotated or revoked on the Sheet side
+  API.token = ''; API.key = null;
+  try{ localStorage.removeItem(VAULT_KEY); localStorage.removeItem(SNAP_KEY); }catch(e){}
+  if(typeof showLockOverlay === 'function') showLockOverlay('Token badal gaya ya band ho gaya — dobara pair karo.');
+}
+function gsRun(fnName, ...args){
+  if(!IN_APPS_SCRIPT) return apiCall(fnName, args);
+  return new Promise((resolve, reject)=>{
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(err=> reject(err))
+      [fnName](...args);
+  });
+}
+async function apiCall(fn, args){
+  if(!API.token) throw new Error('App locked hai — PIN daalo');
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timer = ctl ? setTimeout(()=>ctl.abort(), 45000) : null;
+  let res;
+  try{
+    res = await fetch(API.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({t:API.token, a:fn, args}), redirect:'follow', signal:ctl ? ctl.signal : undefined});
+  }catch(e){
+    throw new Error(e && e.name === 'AbortError' ? 'timeout: server ne jawab nahi diya' : 'Network error: ' + (e && e.message || e));
+  }finally{ if(timer) clearTimeout(timer); }
+  let data;
+  try{ data = await res.json(); }catch(e){ throw new Error('Server ka jawab samajh nahi aaya (HTTP ' + res.status + ')'); }
+  if(data && data.ok !== true && data.error === 'Unauthorized' && !pairingNow) handleUnauthorized();
+  if(!data || data.ok !== true) throw new Error((data && data.error) || 'API error');
+  return data.result;
+}
+function setSaveStatus(state){ // state: true | false | 'busy'
+  const el = document.getElementById('saveStatus');
+  const txt = document.getElementById('saveText');
+  if(!el) return;
+  el.classList.remove('err','busy');
+  if(state==='busy'){ el.classList.add('busy'); txt.textContent = 'Saving to Sheet…'; return; }
+  if(!state){ el.classList.add('err'); txt.textContent = 'Save failed — check connection'; return; }
+  txt.textContent = 'Saved to Google Sheet ✓';
+}
+function requireLoaded(){
+  if(state.readOnly){ alert('Offline hai — abhi sirf dekh sakte ho. Internet aane par save kar paoge.'); return false; }
+  if(!state.loaded){ alert('Data abhi load nahi hua — Retry dabao. Tab tak kuch save nahi ho sakta.'); return false; }
+  return true;
+}
+/** Disables a form's submit button for the duration of fn() so repeat clicks
+ * while a save is in flight can't queue up duplicate saves — this is what
+ * turns a slow save into a visible "Saving…" state instead of a silent hang. */
+async function withSubmitLock(form, fn){
+  const btn = form.querySelector('button[type="submit"]');
+  if(btn && btn.disabled) return; // a save is already in flight for this form, ignore this click
+  const original = btn ? btn.textContent : null;
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+  try{ await fn(); }
+  catch(e){ if(e && e.userMessage){ alert(e.userMessage); } else { console.error('Form submit failed', e); alert('Kuch gadbad ho gayi: ' + (e && e.message || e)); } }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = original; } }
+}
+
+/** Push every key in state to the sheet in one round trip (Excel import only; server takes a backup first). */
+async function persistAll(){
+  if(!requireLoaded()) return false;
+  setSaveStatus('busy');
+  try{
+    await gsRun('setBulkData', {
+      mf_wallets: JSON.stringify(state.wallets),
+      mf_wallet_tx: JSON.stringify(state.walletTx),
+      mf_people: JSON.stringify(state.people),
+      mf_people_tx: JSON.stringify(state.peopleTx),
+      mf_cards: JSON.stringify(state.cards),
+      mf_card_tx: JSON.stringify(state.cardTx),
+      mf_expenses: JSON.stringify(state.expenses),
+      mf_daily: JSON.stringify(state.daily),
+      mf_monthly: JSON.stringify(state.monthly),
+      mf_exp_categories: JSON.stringify(state.expenseCategories),
+      mf_daily_categories: JSON.stringify(state.dailyCategories)
+    }, {confirmReplace:true});
+    setSaveStatus(true);
+    return true;
+  }catch(e){
+    console.error('persistAll failed', e);
+    setSaveStatus(false);
+    alert('Import save nahi hua: ' + (e && e.message || e));
+    return false;
+  }
+}
+
+// ==HONEST-UI-BEGIN==
+/** Rows show faded while saving. A DEFINITIVE rejection rolls local state back. A TRANSIENT (internet) failure keeps the
+ *  change on screen, marked "unsaved", in an in-memory retry queue; retries are safe because ids are idempotent. */
+const REASON_TEXT = {not_found:'Entry nahi mili — Refresh karo.', last_category:'Kam se kam ek category rehni chahiye.'};
+const pending = new Set();   // being saved right now
+const unsaved = new Set();   // waiting in the retry queue
+const retryQueue = [];       // {op:'add'|'edit'|'del', arr, key, ids|id, attempts}
+let lastCallTransient = false, quietNotFound = false, flushing = false;
+function isTransient(e){ const m = (e && e.message !== undefined) ? String(e.message) : String(e || ''); return m === '' || /network|timeout|timed out|failed to fetch|busy|unavailable|try again|connection|offline|dobara try/i.test(m); }
+
+async function remoteCall(fnName, ...args){
+  lastCallTransient = false;
+  if(!requireLoaded()) return {ok:false};
+  setSaveStatus('busy');
+  try{
+    const value = await gsRun(fnName, ...args);
+    if(value && value.ok === false){
+      if(value.reason === 'not_found' && quietNotFound){ setSaveStatus(true); return {ok:true, value}; }
+      setSaveStatus(false);
+      alert(REASON_TEXT[value.reason] || 'Save nahi ho paya: ' + (value.reason || 'unknown'));
+      return {ok:false};
+    }
+    if(value && typeof value.v === 'number' && value.v === state.dataVersion + 1) state.dataVersion = value.v; // our own write: no self-refresh needed
+    setSaveStatus(true); return {ok:true, value};
+  }catch(e){
+    console.error(fnName + ' failed', e);
+    lastCallTransient = isTransient(e);
+    setSaveStatus(false);
+    if(!lastCallTransient) alert('Save nahi ho paya: ' + (e && e.message || e));
+    return {ok:false};
+  }
+}
+const addItem = async (key, item) => (await remoteCall('appendItem', key, JSON.stringify(item))).ok;
+const addItems = async (key, items) => (await remoteCall('appendItems', key, JSON.stringify(items))).ok;
+const editItemRemote = async (key, id, item) => (await remoteCall('updateItem', key, id, JSON.stringify(item))).ok;
+const upsertItemRemote = async (key, id, item) => (await remoteCall('upsertItem', key, id, JSON.stringify(item))).ok;
+const removeItemRemote = async (key, id) => (await remoteCall('deleteItem', key, id)).ok;
+
+function updatePending(){
+  const el = document.getElementById('pendTag'); if(el) el.textContent = pending.size ? pending.size + ' saving…' : '';
+  const b = document.getElementById('retryBtn');
+  if(b){ b.style.display = retryQueue.length ? '' : 'none'; b.textContent = '⚠ ' + retryQueue.length + ' unsaved — Retry now'; }
+}
+function markPending(){
+  if(!pending.size && !unsaved.size) return;
+  const p = [...pending], u = [...unsaved];
+  main.querySelectorAll('tr, .person-row').forEach(el=>{
+    const html = el.innerHTML;
+    if(p.some(id=>html.includes('"'+id+'"'))) el.classList.add('pending-row');
+    else if(u.some(id=>html.includes('"'+id+'"'))) el.classList.add('unsaved-row');
+  });
+}
+function fixActiveSelections(){
+  if(state.activeWallet && !state.wallets.find(w=>w.id===state.activeWallet)) state.activeWallet = state.wallets[0]?.id || null;
+  if(state.activePerson && !state.people.find(p=>p.id===state.activePerson)) state.activePerson = state.people[0]?.id || null;
+  if(state.activeCard && !state.cards.find(c=>c.id===state.activeCard)) state.activeCard = state.cards[0]?.id || null;
+}
+
+/* ---- retry queue (coalesces: an edit/delete of a never-saved row never reaches the server) ---- */
+function queueAdd(arr, key, ids){ retryQueue.push({op:'add', arr, key, ids:[...ids], attempts:0}); ids.forEach(i=>unsaved.add(i)); }
+function queueEdit(key, id){
+  unsaved.add(id);
+  if(retryQueue.some(e=>(e.op==='add' && e.ids.includes(id)) || (e.op==='edit' && e.id===id))) return; // already queued: it will send the latest values
+  retryQueue.push({op:'edit', arr:KEY2ARR[key], key, id, attempts:0});
+}
+function queueDel(arr, key, id){
+  let neverSaved = false;
+  for(let i=retryQueue.length-1; i>=0; i--){
+    const e = retryQueue[i];
+    if(e.op==='add' && e.ids.includes(id)){ e.ids = e.ids.filter(x=>x!==id); neverSaved = true; if(!e.ids.length) retryQueue.splice(i,1); }
+    else if(e.op==='edit' && e.id===id) retryQueue.splice(i,1);
+  }
+  unsaved.delete(id);
+  if(!neverSaved){ retryQueue.push({op:'del', arr, key, id, attempts:0}); unsaved.add(id); }
+}
+async function flushQueue(){
+  if(flushing || !retryQueue.length || !state.loaded || state.readOnly || (typeof isLocked === 'function' && isLocked())) return;
+  flushing = true; let resync = false;
+  try{
+    while(retryQueue.length){
+      const e = retryQueue[0]; let ok = false;
+      if(e.op === 'add'){
+        const items = e.ids.map(id=>state[e.arr].find(x=>x.id===id)).filter(Boolean);
+        if(!items.length){ retryQueue.shift(); continue; }
+        ok = items.length === 1 ? await addItem(e.key, items[0]) : await addItems(e.key, items);
+      } else if(e.op === 'edit'){
+        const obj = state[e.arr].find(x=>x.id===e.id);
+        if(!obj){ retryQueue.shift(); continue; }
+        ok = await editItemRemote(e.key, e.id, obj);
+      } else {
+        quietNotFound = true; try{ ok = await removeItemRemote(e.key, e.id); } finally { quietNotFound = false; }
+      }
+      if(ok){ retryQueue.shift(); (e.ids || [e.id]).forEach(i=>unsaved.delete(i)); continue; }
+      if(lastCallTransient && ++e.attempts < 5) break; // still offline: stop, keep the order
+      retryQueue.shift(); (e.ids || [e.id]).forEach(i=>unsaved.delete(i)); resync = true; // rejected for real: drop it, show the Sheet's truth
+      alert('Ek unsaved entry Sheet ne accept nahi ki — screen Sheet se refresh ho rahi hai.');
+    }
+  } finally { flushing = false; updatePending(); }
+  if(resync){ try{ await loadAll({silent:true}); }catch(_){} }
+  render();
+}
+
+async function saveNewMany(arrName, key, items){
+  items.forEach(i=>pending.add(i.id)); updatePending(); render();
+  const ok = items.length === 1 ? await addItem(key, items[0]) : await addItems(key, items);
+  items.forEach(i=>pending.delete(i.id));
+  if(!ok){
+    if(lastCallTransient) queueAdd(arrName, key, items.map(i=>i.id));
+    else { const gone = new Set(items.map(i=>i.id)); state[arrName] = state[arrName].filter(x=>!gone.has(x.id)); fixActiveSelections(); }
+  }
+  updatePending(); render(); return ok;
+}
+const saveNew = (arrName, key, item) => saveNewMany(arrName, key, [item]);
+/** obj was already edited in place; snap = copy of its old values (restored only on a definitive rejection). */
+async function saveEdit(key, obj, snap){
+  pending.add(obj.id); updatePending(); render();
+  const ok = await editItemRemote(key, obj.id, obj);
+  pending.delete(obj.id);
+  if(!ok){ if(lastCallTransient) queueEdit(key, obj.id); else if(snap) Object.assign(obj, snap); }
+  updatePending(); render(); return ok;
+}
+/** Removes locally, deletes on the server; puts the row back (same position) only on a definitive rejection. */
+async function saveDelete(arrName, key, id){
+  const idx = state[arrName].findIndex(x=>x.id===id);
+  if(idx === -1) return false;
+  const item = state[arrName][idx];
+  state[arrName] = state[arrName].filter(x=>x.id!==id); render();
+  const ok = await removeItemRemote(key, id);
+  if(!ok){
+    if(lastCallTransient) queueDel(arrName, key, id);
+    else state[arrName].splice(Math.min(idx, state[arrName].length), 0, item);
+  }
+  updatePending(); render(); return ok;
+}
+// ==HONEST-UI-END==
+
+
+
+/* ---------- Validation of rows read from the Sheet: anything unsafe/broken is parked in "Needs attention" ---------- */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const KEY2ARR = {mf_wallets:'wallets', mf_wallet_tx:'walletTx', mf_people:'people', mf_people_tx:'peopleTx', mf_cards:'cards', mf_card_tx:'cardTx', mf_expenses:'expenses', mf_daily:'daily', mf_monthly:'monthly'};
+const TAB_NAMES = {mf_wallets:'Wallets', mf_wallet_tx:'Wallet Transactions', mf_people:'People', mf_people_tx:'People Transactions', mf_cards:'Credit Cards', mf_card_tx:'Card Transactions', mf_expenses:'Expenses', mf_daily:'Daily Income', mf_monthly:'Monthly Manual Base'};
+function checkRow(key, r){
+  if(!r || typeof r !== 'object') return 'Row kharab hai';
+  if(!SAFE_ID.test(String(r.id||''))) return 'ID galat ya khali hai';
+  for(const f of ['walletId','personId','cardId']) if(r[f]!==undefined && r[f]!==null && r[f]!=='' && !SAFE_ID.test(String(r[f]))) return f + ' galat hai';
+  if(['mf_wallet_tx','mf_people_tx','mf_card_tx','mf_expenses','mf_daily'].includes(key) && !isRealIsoDate(r.date)) return 'Date galat hai: ' + (r.date===null||r.date===undefined ? '(khali)' : r.date);
+  if(r.time!==undefined && r.time!==null && r.time!=='' && !TIME_RE.test(String(r.time))) r.time = null; // lenient: a bad time is dropped, the row stays
+  if(key==='mf_wallet_tx' && !['credit','debit'].includes(r.type)) return 'Type galat hai';
+  if(key==='mf_people_tx'){ if(r.type==='lent') r.type='given'; else if(r.type==='received') r.type='they_repaid'; if(!['given','they_repaid','borrowed','you_repaid'].includes(r.type)) return 'Type galat hai'; }
+  if(key==='mf_card_tx'){ if(!r.type) r.type='withdraw'; if(!['withdraw','advance','bill'].includes(r.type)) return 'Type galat hai'; }
+  if('amount' in r){ const n = (r.amount===null||r.amount===undefined) ? 0 : Number(r.amount); if(!isFinite(n)) return 'Amount galat hai'; r.amount = n; }
+  if(key==='mf_wallets'){ const n = (r.openingBalance===null||r.openingBalance===undefined) ? 0 : Number(r.openingBalance); if(!isFinite(n)) return 'Opening balance galat hai'; r.openingBalance = n; }
+  if(key==='mf_monthly'){
+    r.year = Number(r.year);
+    if(!(Number.isInteger(r.year) && r.year>=2000 && r.year<=2100)) return 'Saal galat hai';
+    if(!monthNames.includes(r.month)) return 'Month galat hai';
+    r.incomeBase = Number(r.incomeBase)||0; r.expenseBase = Number(r.expenseBase)||0;
+  }
+  return null;
+}
+/** Filters every array in `next` (same names as state). Returns the list of rejected rows. */
+function sanitizeAll(next){
+  const problems = [];
+  Object.keys(KEY2ARR).forEach(key=>{
+    const name = KEY2ARR[key];
+    next[name] = next[name].filter(r=>{ const why = checkRow(key, r); if(why){ problems.push({tab:TAB_NAMES[key], why, row:r||{}}); return false; } return true; });
+  });
+  return problems;
+}
+function problemsBoxHtml(){
+  const p = state.problems || [];
+  if(!p.length) return '';
+  const items = p.slice(0,8).map(x=>`<li><b>${h(x.tab)}</b>: ${h(x.why)} <span class="mini-tag">(${h(String(x.row.id||x.row.name||x.row.note||'').slice(0,30))})</span></li>`).join('');
+  return `<div class="note-box" style="border-color:var(--negative); color:var(--ink);"><b>⚠ ${p.length} row Sheet me galat hain, isliye app me nahi dikh rahe.</b> Sheet me jaake theek karo ya delete karo, phir Refresh dabao.<ul style="margin:6px 0 0 18px;">${items}${p.length>8?`<li>…aur ${p.length-8}</li>`:''}</ul></div>`;
+}
+const isArchived = o => !!o && o.archived === '1';
+const visWallets = () => state.showArchived ? state.wallets : state.wallets.filter(w=>!isArchived(w));
+const visPeople = () => state.showArchived ? state.people : state.people.filter(p=>!isArchived(p));
+const visCards = () => state.showArchived ? state.cards : state.cards.filter(c=>!isArchived(c));
+
+let state = {
+  wallets:[], walletTx:[], people:[], peopleTx:[], cards:[], cardTx:[], expenses:[], daily:[], monthly:[],
+  expenseCategories:[], dailyCategories:[],
+  loaded:false, loading:false, loadError:null, readOnly:false, snapshotAt:0, showArchived:false, problems:[], dataVersion:0, version:'', activePerson:null, activeCard:null, activeWallet:null, dailyMonth:todayStr().slice(0,7)
+};
+
+
+/** Parses + validates a getAllData reply and swaps it into state (all-or-nothing). */
+function applyRaw(raw){
+  const get = k => {
+    if(!raw || typeof raw[k] !== 'string') throw new Error('Server ne ' + k + ' nahi bheja');
+    const v = JSON.parse(raw[k]);
+    if(!Array.isArray(v)) throw new Error(k + ' sahi format me nahi hai');
+    return v;
+  };
+  const next = {
+    wallets:get('mf_wallets'), walletTx:get('mf_wallet_tx'), people:get('mf_people'), peopleTx:get('mf_people_tx'),
+    cards:get('mf_cards'), cardTx:get('mf_card_tx'), expenses:get('mf_expenses'), daily:get('mf_daily'), monthly:get('mf_monthly'),
+    expenseCategories:get('mf_exp_categories'), dailyCategories:get('mf_daily_categories')
+  };
+  const problems = sanitizeAll(next);
+  Object.assign(state, next); state.problems = problems; state.dataVersion = Number(raw.__version) || 0;
+}
+async function loadAll(opts){
+  opts = opts || {};
+  state.loading = true;
+  try{
+    const raw = await gsRun('getAllData');
+    applyRaw(raw);
+    state.loaded = true; state.loadError = null; state.readOnly = false;
+    setSaveStatus(true);
+    saveSnapshot(raw);
+    gsRun('getVersion').then(v=>{ const el = document.getElementById('verTag'); if(el) el.textContent = 'v' + v; state.version = v; updateFoot(); }).catch(()=>{});
+  }catch(e){
+    console.error('loadAll failed', e);
+    if(opts.silent) throw e; // background refresh: keep what is on screen
+    state.loaded = false; state.loadError = e;
+    setSaveStatus(false);
+    throw e;
+  }finally{
+    state.loading = false;
+  }
+}
+function showLoadError(e){
+  main.innerHTML = `<div class="note-box" style="border-color:var(--negative);"><b>Data load nahi ho paya.</b><br>Jab tak data load na ho, kuch save nahi hoga — isse Sheet ka purana data safe rehta hai.<br><span class="mini-tag">${escapeHtml((e && e.message) || e || '')}</span><br><br><button class="btn" id="retryLoadBtn">🔄 Retry</button></div>`;
+  document.getElementById('retryLoadBtn').onclick = startApp;
+}
+async function startApp(){
+  if(isLocked()) await ensureUnlocked();
+  main.innerHTML = `<p class="section-sub">Loading your ledger from Google Sheets…</p>`;
+  try{ await loadAll(); render(); startPolling(); probeStorage(); openTabFromUrl(); }
+  catch(e){
+    // PWA only: no internet at launch -> show the last encrypted snapshot, read-only
+    if(!IN_APPS_SCRIPT && isTransient(e)){
+      const snap = await loadSnapshot();
+      if(snap){
+        try{ applyRaw(snap.raw); state.loaded = true; state.readOnly = true; state.snapshotAt = snap.t; state.loadError = null; setSaveStatus(false); render(); showOfflineBanner(); startPolling(); probeStorage(); return; }catch(_){ /* fall through */ }
+      }
+    }
+    showLoadError(e);
+  }
+}
+
+/* ---------- Unified wallet passbook: single source of truth, no manual balance edits ---------- */
+function walletOpening(walletId){ const w = state.wallets.find(x=>x.id===walletId); return w ? Number(w.openingBalance||0) : 0; }
+function walletLedgerEntries(walletId){
+  const rows = [];
+  state.walletTx.filter(t=>t.walletId===walletId).forEach(t=>rows.push({id:t.id, editable:true, date:t.date, desc:t.note || (t.type==='credit'?'Money In':'Money Out'), amount: t.type==='credit'? Number(t.amount): -Number(t.amount), tag:'Manual'}));
+  state.expenses.filter(e=>e.walletId===walletId).forEach(e=>rows.push({editable:false, date:e.date, desc:`Expense — ${e.category}`, amount:-Number(e.amount||0), tag:'Expense'}));
+  state.daily.filter(d=>d.walletId===walletId).forEach(d=>rows.push({editable:false, date:d.date, desc:`Income — ${d.category||'Daily'}`, amount:Number(d.amount||0), tag:'Daily Ledger'}));
+  state.cardTx.filter(c=>c.walletId===walletId).forEach(c=>{
+    const label = c.type==='withdraw' ? `Card Withdrawal — ${nameOfCard(c.cardId)}` : c.type==='advance' ? `Card Advance Payment — ${nameOfCard(c.cardId)}` : `Card Bill Payment — ${nameOfCard(c.cardId)}`;
+    rows.push({editable:false, date:c.date, desc:label, amount: c.type==='withdraw'? Number(c.amount): -Number(c.amount), tag:'Credit Card'});
+  });
+  state.peopleTx.filter(p=>p.walletId===walletId).forEach(p=>{
+    const inflow = p.type==='they_repaid' || p.type==='borrowed';
+    rows.push({editable:false, date:p.date, desc:`${nameOfPerson(p.personId)} — ${peopleTypeLabel(p.type)}`, amount: inflow? Number(p.amount): -Number(p.amount), tag:'People Ledger'});
+  });
+  rows.sort((a,b)=> a.date<b.date?-1: a.date>b.date?1:0);
+  let running = walletOpening(walletId);
+  return rows.map(r=>{ running = r2(running + r.amount); return {...r, running}; });
+}
+function walletBalance(walletId){
+  const entries = walletLedgerEntries(walletId);
+  return entries.length ? entries[entries.length-1].running : walletOpening(walletId);
+}
+function peopleTypeLabel(type){
+  return {given:'You Gave', they_repaid:'They Repaid', borrowed:'You Borrowed', you_repaid:'You Repaid'}[type] || type;
+}
+function walletOptions(selectedId){
+  return `<option value="">— Not linked —</option>` + state.wallets.filter(w=>!isArchived(w)||w.id===selectedId).map(w=>`<option value="${w.id}" ${w.id===selectedId?'selected':''}>${escapeHtml(w.name)}</option>`).join('');
+}
+
+
+/* ---------- archive + wallet-delete helpers (Phase 3) ---------- */
+async function toggleArchive(arrName, key, id){
+  const o = state[arrName].find(x=>x.id===id); if(!o) return;
+  if(!isArchived(o)){
+    let warn = '';
+    if(arrName==='wallets' && walletBalance(id)!==0) warn = `Is wallet me ${money(walletBalance(id))} balance hai. Archive karne par bhi total me gina jayega.`;
+    if(arrName==='people'){ const n = r2(state.peopleTx.filter(t=>t.personId===id).reduce((s,t)=>s+((t.type==='given'||t.type==='you_repaid')?Number(t.amount):-Number(t.amount)),0)); if(n!==0) warn = `Is person ka hisaab abhi ${money(Math.abs(n))} baaki hai. Archive karne par bhi dashboard me gina jayega.`; }
+    if(arrName==='cards'){ const n = r2(state.cardTx.filter(t=>t.cardId===id).reduce((s,t)=>s+(t.type==='withdraw'?Number(t.amount):-Number(t.amount)),0)); if(n!==0) warn = `Is card ka ${money(n)} outstanding baaki hai. Archive karne par bhi dashboard me gina jayega.`; }
+    if(warn && !confirm(warn + '\nPhir bhi archive karein?')) return;
+  }
+  const snap = {...o};
+  o.archived = isArchived(o) ? '' : '1';
+  await saveEdit(key, o, snap);
+}
+function walletDeleteMsg(id){
+  const c = {Expenses:state.expenses.filter(x=>x.walletId===id).length, Daily:state.daily.filter(x=>x.walletId===id).length, Card:state.cardTx.filter(x=>x.walletId===id).length, People:state.peopleTx.filter(x=>x.walletId===id).length};
+  const total = c.Expenses + c.Daily + c.Card + c.People;
+  return `"${nameOfWallet(id)}" wallet aur uski Manual entries delete ho jayengi.\n` +
+    (total ? `Dusre tabs ki ${total} entries (Expenses ${c.Expenses}, Daily ${c.Daily}, Card ${c.Card}, People ${c.People}) is wallet se jude hain — wo delete nahi hongi, bas "Not linked" ho jayengi.\n` : '') +
+    `History rakhni ho to Cancel dabao aur "Archive" use karo.\nPakka delete karein?`;
+}
+function categoryManagerHtml(key, list){
+  return `<details class="note-box" style="margin-top:-6px;"><summary style="cursor:pointer;">Categories manage karo</summary><div data-catkey="${key}" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">` +
+    list.map(c=>`<span class="pill-opt">${h(c)} <b data-delcat="${h(c)}" style="cursor:pointer; color:var(--negative);" title="Is category ko list se hatao">✕</b></span>`).join('') + `</div><div class="sub-label">Purani entries ki category waisi hi rehti hai.</div></details>`;
+}
+
+/* ---------- Calculation engine (single source of truth) ---------- */
+function dailySumFor(year, month){
+  const key = `${year}-${String(monthNames.indexOf(month)+1).padStart(2,'0')}`;
+  return r2(state.daily.filter(d=>d.date.slice(0,7)===key).reduce((s,d)=>s+Number(d.amount||0),0));
+}
+function expenseSumFor(year, month){
+  const key = `${year}-${String(monthNames.indexOf(month)+1).padStart(2,'0')}`;
+  return r2(state.expenses.filter(e=>e.date.slice(0,7)===key).reduce((s,e)=>s+Number(e.amount||0),0));
+}
+function manualRow(year, month){
+  return state.monthly.find(m=>m.month===month && Number(m.year)===Number(year)) || {incomeBase:0, expenseBase:0};
+}
+function computeMonth(year, month){
+  const m = manualRow(year, month);
+  const dailyIncome = dailySumFor(year, month);
+  const loggedExpense = expenseSumFor(year, month);
+  const totalIncome = r2(Number(m.incomeBase||0) + dailyIncome);
+  const totalExpense = r2(Number(m.expenseBase||0) + loggedExpense);
+  return { incomeBase:Number(m.incomeBase||0), dailyIncome, totalIncome, expenseBase:Number(m.expenseBase||0), loggedExpense, totalExpense, net: r2(totalIncome-totalExpense) };
+}
+function nameOfPerson(id){ return (state.people.find(p=>p.id===id)||{}).name || '—'; }
+function nameOfCard(id){ return (state.cards.find(c=>c.id===id)||{}).name || '—'; }
+function getYearsList(){
+  const now = new Date().getFullYear();
+  const set = new Set(state.monthly.map(m=>Number(m.year)));
+  set.add(now);
+  return Array.from(set).sort();
+}
+
+let currentTab = 'dashboard';
+const main = document.getElementById('main');
+document.getElementById('tabs').addEventListener('click', e=>{
+  const li = e.target.closest('.tab'); if(!li) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  li.classList.add('active'); currentTab = li.dataset.tab; render();
+});
+
+function render(){
+  if(!state.loaded){ if(!state.loading) showLoadError(state.loadError); return; }
+  ({dashboard:renderDashboard, wallets:renderWallets, people:renderPeople, cards:renderCards,
+    expenses:renderExpenses, daily:renderDaily, monthly:renderMonthly})[currentTab]();
+  wireDateFields(main);
+  markPending();
+  const sa = document.getElementById('showArchChk'); if(sa) sa.onchange = ()=>{ state.showArchived = sa.checked; render(); };
+}
+
+/* ---------------- DASHBOARD ---------------- */
+function renderDashboard(){
+  const totalWallet = r2(state.wallets.reduce((s,w)=>s+walletBalance(w.id),0));
+  const personNet = {};
+  state.peopleTx.forEach(tx=>{
+    const amt = (tx.type==='given'||tx.type==='you_repaid') ? Number(tx.amount) : -Number(tx.amount);
+    personNet[tx.personId] = r2((personNet[tx.personId]||0) + amt);
+  });
+  const toReceive = r2(Object.values(personNet).filter(v=>v>0).reduce((a,b)=>a+b,0));
+  const toPay = r2(Object.values(personNet).filter(v=>v<0).reduce((a,b)=>a+b,0));
+  const cardTotal = r2(state.cardTx.reduce((s,t)=> s + (t.type==='withdraw'? Number(t.amount||0) : -Number(t.amount||0)), 0));
+
+  const now = new Date();
+  const curMonth = monthNames[now.getMonth()], curYear = now.getFullYear();
+  const cm = computeMonth(curYear, curMonth);
+
+  if(!state.dashboardMode) state.dashboardMode = 'thisMonth';
+  if(!state.dashboardYear) state.dashboardYear = curYear;
+  const years = getYearsList();
+
+  let chartTitle, chartRows, chartLabels;
+  if(state.dashboardMode==='year'){
+    const chartYear = years.includes(state.dashboardYear) ? state.dashboardYear : curYear;
+    chartRows = monthNames.map(mn=>computeMonth(chartYear, mn));
+    chartLabels = monthNames.map(mn=>mn.slice(0,3));
+    chartTitle = `Income vs Expense — ${chartYear} (Monthly)`;
+  } else {
+    const daysInMonth = new Date(curYear, now.getMonth()+1, 0).getDate();
+    chartRows = []; chartLabels = [];
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = `${curYear}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      chartRows.push({ totalIncome: state.daily.filter(x=>x.date===ds).reduce((s,x)=>s+Number(x.amount||0),0),
+                  totalExpense: state.expenses.filter(x=>x.date===ds).reduce((s,x)=>s+Number(x.amount||0),0) });
+      chartLabels.push(String(d));
+    }
+    chartTitle = `Income vs Expense — ${curMonth} ${curYear} (Daily)`;
+  }
+  const chartSvg = buildLineChart(chartRows, chartLabels);
+
+  main.innerHTML = `
+    <h2 class="section-title">Dashboard</h2>
+    <p class="section-sub">Overview as of ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</p>
+    ${problemsBoxHtml()}
+    <div class="chart-box chart-box-glow">
+      <div class="chart-head">
+        <h3>${chartTitle}</h3>
+        <div class="legend">
+          <span><i class="dot2" style="background:var(--positive)"></i>Income</span>
+          <span><i class="dot2" style="background:var(--negative)"></i>Expense</span>
+        </div>
+      </div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <div class="pill-select">
+          <span class="pill-opt ${state.dashboardMode==='thisMonth'?'active':''}" data-dmode="thisMonth">This Month (Daily)</span>
+          <span class="pill-opt ${state.dashboardMode==='year'?'active':''}" data-dmode="year">Full Year (Monthly)</span>
+        </div>
+        ${state.dashboardMode==='year' ? `<select class="month-select" id="dashYearSelect">${years.map(y=>`<option value="${y}" ${y===state.dashboardYear?'selected':''}>${y}</option>`).join('')}</select>` : ''}
+      </div>
+      <div class="chart-svg-wrap" id="chartSvgWrap">${chartSvg}<div class="chart-tooltip" id="chartTooltip"></div></div>
+      <p class="section-sub" style="margin:8px 0 0; font-size:11px;">Graph pe finger/mouse le jaane se us din/mahine ka exact amount dikhega</p>
+    </div>
+    <div class="cards">
+      <div class="card accent-indigo"><div class="label">Total Wallet Balance</div><div class="value">${money(totalWallet)}</div></div>
+      <div class="card accent-emerald"><div class="label">To Receive (People)</div><div class="value pos">${money(toReceive)}</div></div>
+      <div class="card accent-red"><div class="label">To Pay (People)</div><div class="value neg">${money(Math.abs(toPay))}</div></div>
+      <div class="card accent-amber"><div class="label">Credit Card Outstanding</div><div class="value neg">${money(cardTotal)}</div></div>
+    </div>
+    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card accent-emerald"><div class="label">${curMonth} Income</div><div class="value pos">${money(cm.totalIncome)}</div></div>
+      <div class="card accent-red"><div class="label">${curMonth} Expense</div><div class="value neg">${money(cm.totalExpense)}</div></div>
+      <div class="card accent-indigo"><div class="label">${curMonth} Net</div><div class="value ${cm.net>=0?'pos':'neg'}">${money(cm.net)}</div></div>
+    </div>
+  `;
+  document.querySelectorAll('.pill-opt[data-dmode]').forEach(p=>p.addEventListener('click', ()=>{ state.dashboardMode = p.dataset.dmode; render(); }));
+  const yearSel = document.getElementById('dashYearSelect');
+  if(yearSel) yearSel.addEventListener('change', e=>{ state.dashboardYear = Number(e.target.value); render(); });
+  attachChartTooltip(chartRows, chartLabels);
+}
+
+function attachChartTooltip(rows, labels){
+  const wrap = document.getElementById('chartSvgWrap');
+  const svg = wrap && wrap.querySelector('svg');
+  const tooltip = document.getElementById('chartTooltip');
+  if(!svg || !tooltip) return;
+  const VB_W = 900, pad = {left:66, right:20};
+  const plotW = VB_W - pad.left - pad.right;
+  const n = rows.length;
+  function showAt(clientX, clientY){
+    const rect = svg.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const scale = VB_W / rect.width;
+    const vbX = relX * scale;
+    let idx = Math.round(((vbX - pad.left)/plotW)*(n-1));
+    idx = Math.max(0, Math.min(n-1, idx));
+    const r = rows[idx];
+    tooltip.innerHTML = `<b>${labels[idx]}</b><br><span style="color:var(--positive);">In: ${money(r.totalIncome)}</span><br><span style="color:var(--negative);">Out: ${money(r.totalExpense)}</span>`;
+    tooltip.style.display = 'block';
+    let left = relX + 12;
+    if(left + 130 > rect.width) left = relX - 142;
+    tooltip.style.left = Math.max(4, left) + 'px';
+    tooltip.style.top = Math.max(0, (clientY - rect.top) - 60) + 'px';
+  }
+  svg.addEventListener('mousemove', e=>showAt(e.clientX, e.clientY));
+  svg.addEventListener('mouseleave', ()=>{ tooltip.style.display = 'none'; });
+  svg.addEventListener('touchstart', e=>{ const t=e.touches[0]; showAt(t.clientX, t.clientY); }, {passive:true});
+  svg.addEventListener('touchmove', e=>{ const t=e.touches[0]; showAt(t.clientX, t.clientY); }, {passive:true});
+  svg.addEventListener('touchend', ()=>{ setTimeout(()=>{ tooltip.style.display = 'none'; }, 1500); });
+}
+
+function buildLineChart(rows, labels){
+  const W=900,H=280,pad={top:16,right:20,bottom:34,left:66};
+  const plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+  const n = rows.length;
+  const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.totalIncome, r.totalExpense))) * 1.15;
+  const x = i => pad.left + (n<=1?0:(i/(n-1))*plotW);
+  const y = v => pad.top + plotH - (v/maxVal)*plotH;
+
+  const gridCount = 4;
+  let gridLines = '';
+  for(let g=0; g<=gridCount; g++){
+    const val = (maxVal/gridCount)*g;
+    const gy = y(val);
+    gridLines += `<line x1="${pad.left}" y1="${gy}" x2="${W-pad.right}" y2="${gy}" stroke="var(--rule)" stroke-width="1"/>`;
+    gridLines += `<text x="${pad.left-10}" y="${gy+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${val>=1000 ? '₹'+(Math.round(val/100)/10)+'k' : '₹'+Math.round(val)}</text>`;
+  }
+  const step = n>20 ? Math.ceil(n/15) : 1;
+  const axisLabels = labels.map((lb,i)=> (i%step===0)?`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Inter">${lb}</text>`:'').join('');
+
+  const incomePts = rows.map((r,i)=>`${x(i)},${y(r.totalIncome)}`).join(' ');
+  const expensePts = rows.map((r,i)=>`${x(i)},${y(r.totalExpense)}`).join(' ');
+  const incomeArea = `M${x(0)},${y(0)} L` + rows.map((r,i)=>`${x(i)},${y(r.totalIncome)}`).join(' L') + ` L${x(n-1)},${y(0)} Z`;
+
+  const incomeDots = rows.map((r,i)=>`<circle cx="${x(i)}" cy="${y(r.totalIncome)}" r="${n>20?2:3.2}" fill="var(--positive)"><title>${labels[i]}: Income ${money(r.totalIncome)}</title></circle>`).join('');
+  const expenseDots = rows.map((r,i)=>`<circle cx="${x(i)}" cy="${y(r.totalExpense)}" r="${n>20?2:3.2}" fill="var(--negative)"><title>${labels[i]}: Expense ${money(r.totalExpense)}</title></circle>`).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; overflow:visible;">
+    ${gridLines}
+    <path d="${incomeArea}" fill="var(--positive)" opacity="0.08"></path>
+    <polyline points="${incomePts}" fill="none" stroke="var(--positive)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${expensePts}" fill="none" stroke="var(--negative)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="0"/>
+    ${incomeDots}${expenseDots}
+    ${axisLabels}
+    <line x1="${pad.left}" y1="${pad.top+plotH}" x2="${W-pad.right}" y2="${pad.top+plotH}" stroke="var(--ink)" stroke-width="1" opacity="0.3"/>
+  </svg>`;
+}
+
+/* ---------------- WALLETS (passbook ledger — balance is always computed, never overwritten) ---------------- */
+let editingWalletTxId = null;
+let editingWalletId = null;
+function renderWallets(){
+  if(!state.activeWallet && state.wallets.length>0) state.activeWallet = state.wallets[0].id;
+  const total = r2(state.wallets.reduce((s,w)=>s+walletBalance(w.id),0));
+  const activeW = state.wallets.find(w=>w.id===state.activeWallet);
+  const entries = activeW ? walletLedgerEntries(activeW.id).slice().reverse() : [];
+  const otherWallets = activeW ? state.wallets.filter(w=>w.id!==activeW.id && !isArchived(w)) : [];
+  const editingTx = editingWalletTxId ? state.walletTx.find(t=>t.id===editingWalletTxId) : null;
+  const editingW = editingWalletId ? state.wallets.find(w=>w.id===editingWalletId) : null;
+
+  main.innerHTML = `
+    <h2 class="section-title">Wallets</h2>
+    <p class="section-sub">Bank accounts, cash-in-hand, and payment wallets — balance updates automatically from every entry you log elsewhere. Set opening balance once; after that just add "Money In / Money Out", or let Expenses, Daily Ledger, Credit Card and People Ledger update it for you.</p>
+    <form class="entry-form" id="walletForm">
+      <div class="field"><label>Wallet Name</label><input type="text" name="name" placeholder="e.g. CSC Wallet, PNB Bank, Cash" value="${editingW?escapeHtml(editingW.name):''}" required></div>
+      <div class="field"><label>Opening Balance</label><input type="number" name="balance" placeholder="0" step="any" value="${editingW?editingW.openingBalance:0}"></div>
+      <button class="btn" type="submit">${editingW?'Update Wallet':'Add Wallet'}</button>
+      ${editingW?`<button class="btn ghost small" type="button" id="cancelWalletMainEdit">Cancel</button>`:''}
+      <label class="mini-tag" style="display:flex;gap:4px;align-items:center;"><input type="checkbox" id="showArchChk" ${state.showArchived?'checked':''}> Archived dikhao</label>
+    </form>
+    ${editingW?`<p class="section-sub" style="margin-top:-12px;">Note: opening balance badalne se poore passbook ka running balance bhi us hisaab se shift ho jayega.</p>`:''}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Wallet</th><th class="num">Current Balance</th><th></th></tr></thead>
+      <tbody id="walletBody">
+        ${state.wallets.length===0?`<tr class="empty-row"><td colspan="3">No wallets added yet</td></tr>`:''}
+        ${visWallets().map(w=>`<tr class="${w.id===state.activeWallet?'totals-row':''}"><td style="cursor:pointer;" data-view="${w.id}">${escapeHtml(w.name)}${isArchived(w)?' <span class="mini-tag">(archived)</span>':''}</td><td class="num">${money(walletBalance(w.id))}</td><td><button class="btn ghost small" data-editwallet="${w.id}">Edit</button> <button class="btn ghost small" data-archwallet="${w.id}">${isArchived(w)?'Restore':'Archive'}</button> <button class="btn ghost small" data-del="${w.id}">Delete</button></td></tr>`).join('')}
+        ${state.wallets.length>0?`<tr class="totals-row"><td>Total (all wallets)</td><td class="num">${money(total)}</td><td></td></tr>`:''}
+      </tbody>
+    </table></div>
+
+    ${activeW ? `
+    <h2 class="section-title" style="font-size:18px; margin-top:26px;">${escapeHtml(activeW.name)} — Passbook</h2>
+    <p class="section-sub">Opening balance ${money(walletOpening(activeW.id))}. Rows other than "Manual" come from their own tabs — edit them there.</p>
+    <form class="entry-form" id="walletTxForm">
+      ${dateFieldHTML('date', editingTx?editingTx.date:todayStr())}
+      <div class="field"><label>Type</label><select name="type"><option value="credit" ${editingTx&&editingTx.type==='credit'?'selected':''}>Money In</option><option value="debit" ${editingTx&&editingTx.type==='debit'?'selected':''}>Money Out</option></select></div>
+      <div class="field"><label>Amount</label><input type="number" name="amount" placeholder="0" step="any" value="${editingTx?editingTx.amount:''}" required></div>
+      <div class="field"><label>Note</label><input type="text" name="note" placeholder="e.g. Loaded from PNB" value="${editingTx?escapeHtml(editingTx.note||''):''}"></div>
+      ${(!editingTx && otherWallets.length) ? `<div class="field"><label>Or Transfer To</label><select name="transferTo"><option value="">— none, plain entry —</option>${otherWallets.map(w=>`<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('')}</select></div>` : ''}
+      <button class="btn" type="submit">${editingTx?'Update Entry':'Add Entry'}</button>
+      ${editingTx?`<button class="btn ghost small" type="button" id="cancelWalletEdit">Cancel</button>`:''}
+    </form>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Description</th><th class="mini-tag" style="text-transform:none;">Source</th><th class="num">Amount</th><th class="num">Balance</th><th></th></tr></thead>
+      <tbody id="walletTxBody">
+        ${entries.length===0?`<tr class="empty-row"><td colspan="6">No transactions yet for ${escapeHtml(activeW.name)}</td></tr>`:''}
+        ${entries.map(r=>`<tr><td>${h(r.date)}</td><td>${escapeHtml(r.desc)}</td><td><span class="mini-tag">${h(r.tag)}</span></td><td class="num"><span class="${r.amount>=0?'pos-text':'neg-text'}">${r.amount>=0?'+':''}${money(r.amount)}</span></td><td class="num">${money(r.running)}</td><td>${r.editable?`<button class="btn ghost small" data-edittx="${r.id}">Edit</button> <button class="btn ghost small" data-deltx="${r.id}">Delete</button>`:''}</td></tr>`).join('')}
+      </tbody>
+    </table></div>` : (state.wallets.length ? '' : `<p class="section-sub">Add a wallet above, then click on it in the table to open its passbook.</p>`)}`;
+
+  const walletForm = document.getElementById('walletForm');
+  walletForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(walletForm, async ()=>{
+      const fd = new FormData(walletForm);
+      if(editingWalletId){
+        const w = state.wallets.find(x=>x.id===editingWalletId); const snap_ = w ? {...w} : null;
+        if(w){ w.name = fd.get('name'); w.openingBalance = Number(fd.get('balance'))||0; }
+        editingWalletId = null;
+        if(w) await saveEdit('mf_wallets', w, snap_);
+        render(); return;
+      }
+      const w = {id:uid(), name:fd.get('name'), openingBalance:Number(fd.get('balance'))||0};
+      state.wallets.push(w); state.activeWallet = w.id;
+      await saveNew('wallets', 'mf_wallets', w);
+    });
+  });
+  const cancelWalletMainEdit = document.getElementById('cancelWalletMainEdit');
+  if(cancelWalletMainEdit) cancelWalletMainEdit.addEventListener('click', ()=>{ editingWalletId = null; render(); });
+  document.getElementById('walletBody').addEventListener('click', async e=>{
+    const archId = e.target.dataset.archwallet;
+    if(archId){ await toggleArchive('wallets','mf_wallets',archId); return; }
+    const editWalletId = e.target.dataset.editwallet;
+    if(editWalletId){ editingWalletId = editWalletId; window.scrollTo({top:0, behavior:'smooth'}); render(); return; }
+    const delId = e.target.dataset.del;
+    if(delId){
+      if(!confirmDelete(walletDeleteMsg(delId))) return;
+      const r = await remoteCall('deleteWalletCascade', delId);
+      if(!r.ok) return;
+      state.wallets = state.wallets.filter(w=>w.id!==delId);
+      state.walletTx = state.walletTx.filter(t=>t.walletId!==delId);
+      if(state.activeWallet===delId) state.activeWallet = state.wallets[0]?.id || null;
+      render(); return;
+    }
+    const view = e.target.dataset.view; if(!view) return;
+    state.activeWallet = view; editingWalletTxId = null; render();
+  });
+  const walletTxForm = document.getElementById('walletTxForm');
+  if(walletTxForm) walletTxForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(walletTxForm, async ()=>{
+      const fd = new FormData(walletTxForm);
+      const date = requireDate(fd.get('date')), amount = Number(fd.get('amount')), note = fd.get('note') || '';
+      if(editingWalletTxId){
+        const tx = state.walletTx.find(t=>t.id===editingWalletTxId); const snap_ = tx ? {...tx} : null;
+        if(tx){ tx.date=date; tx.type=fd.get('type'); tx.amount=amount; tx.note=note; }
+        editingWalletTxId = null;
+        if(tx) await saveEdit('mf_wallet_tx', tx, snap_);
+        render(); return;
+      }
+      const transferTo = fd.get('transferTo');
+      if(transferTo){
+        const transferId = uid();
+        const out = {id:uid(), walletId:activeW.id, date, type:'debit', amount, note: note || `Transfer to ${nameOfWallet(transferTo)}`, transferId};
+        const inn = {id:uid(), walletId:transferTo, date, type:'credit', amount, note: note || `Transfer from ${activeW.name}`, transferId};
+        state.walletTx.push(out, inn);
+        await saveNewMany('walletTx', 'mf_wallet_tx', [out, inn]); // atomic: both rows or none
+      } else {
+        const item = {id:uid(), walletId:activeW.id, date, type:fd.get('type'), amount, note};
+        state.walletTx.push(item);
+        await saveNew('walletTx', 'mf_wallet_tx', item);
+      }
+      render();
+    });
+  });
+  const cancelBtn = document.getElementById('cancelWalletEdit');
+  if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingWalletTxId = null; render(); });
+  const walletTxBody = document.getElementById('walletTxBody');
+  if(walletTxBody) walletTxBody.addEventListener('click', async e=>{
+    const editId = e.target.dataset.edittx;
+    if(editId){
+      const t0 = state.walletTx.find(t=>t.id===editId);
+      if(t0 && t0.transferId){ alert('Transfer edit nahi ho sakta — delete karke dobara banao.'); return; }
+      editingWalletTxId = editId; render(); return;
+    }
+    const id = e.target.dataset.deltx; if(!id) return;
+    const tx = state.walletTx.find(t=>t.id===id);
+    if(tx && tx.transferId){
+      if(!confirm('Ye transfer ki entry hai — dono taraf ki entry delete hogi. Pakka?')) return;
+      const r = await remoteCall('deleteByField', 'mf_wallet_tx', 'transferId', tx.transferId);
+      if(r.ok) state.walletTx = state.walletTx.filter(t=>t.transferId!==tx.transferId);
+      render(); return;
+    }
+    if(!confirmDelete()) return;
+    await saveDelete('walletTx', 'mf_wallet_tx', id);
+  });
+}
+function nameOfWallet(id){ return (state.wallets.find(w=>w.id===id)||{}).name || '—'; }
+
+/* ---------------- PEOPLE LEDGER ---------------- */
+let editingPersonTxId = null;
+function renderPeople(){
+  if(!state.activePerson && state.people.length>0) state.activePerson = (visPeople()[0] || state.people[0]).id;
+  const personListHtml = visPeople().map(p=>{
+    const net = r2(state.peopleTx.filter(t=>t.personId===p.id).reduce((s,t)=> s + ((t.type==='given'||t.type==='you_repaid')?Number(t.amount):-Number(t.amount)), 0));
+    return `<div class="person-row ${p.id===state.activePerson?'active':''}" data-person="${p.id}"><span>${escapeHtml(p.name)}${isArchived(p)?' <span class="mini-tag">(archived)</span>':''}</span><span class="${net>=0?'pos-text':'neg-text'}">${net>=0?money(net)+' owes you':money(Math.abs(net))+' you owe'}</span></div>`;
+  }).join('') || `<div class="empty-row" style="padding:16px;">No people added yet</div>`;
+  const activeTx = state.peopleTx.filter(t=>t.personId===state.activePerson).sort((a,b)=>a.date<b.date?1:-1);
+  const activePersonObj = state.people.find(p=>p.id===state.activePerson);
+  const editingTx = editingPersonTxId ? state.peopleTx.find(t=>t.id===editingPersonTxId) : null;
+
+  main.innerHTML = `
+    <h2 class="section-title">People Ledger</h2>
+    <p class="section-sub">Track both directions — what people owe you, and what you owe them (loans you've taken)</p>
+    <form class="entry-form" id="personForm">
+      <div class="field"><label>New Person</label><input type="text" name="name" placeholder="Name" required></div>
+      <button class="btn" type="submit">Add Person</button>
+      <label class="mini-tag" style="display:flex;gap:4px;align-items:center;"><input type="checkbox" id="showArchChk" ${state.showArchived?'checked':''}> Archived dikhao</label>
+    </form>
+    <div class="people-grid">
+      <div class="people-list" id="peopleList">${personListHtml}</div>
+      <div>
+        ${activePersonObj ? `
+        <div class="toolbar"><span class="mini-tag">${escapeHtml(activePersonObj.name)}</span><span><button class="btn ghost small" type="button" id="archPersonBtn">${isArchived(activePersonObj)?'Restore':'Archive'}</button> <button class="btn ghost small" type="button" id="delPersonBtn">Delete person</button></span></div>
+        <form class="entry-form" id="txForm">
+          ${dateFieldHTML('date', editingTx?editingTx.date:todayStr())}
+          <div class="field"><label>Type</label><select name="type">
+            <option value="given" ${editingTx&&editingTx.type==='given'?'selected':''}>You Gave Them (they owe you)</option>
+            <option value="they_repaid" ${editingTx&&editingTx.type==='they_repaid'?'selected':''}>They Repaid You</option>
+            <option value="borrowed" ${editingTx&&editingTx.type==='borrowed'?'selected':''}>You Borrowed From Them (you owe them)</option>
+            <option value="you_repaid" ${editingTx&&editingTx.type==='you_repaid'?'selected':''}>You Repaid Them</option>
+          </select></div>
+          <div class="field"><label>Amount</label><input type="number" name="amount" placeholder="0" step="any" value="${editingTx?editingTx.amount:''}" required></div>
+          <div class="field"><label>Via Wallet</label><select name="walletId">${walletOptions(editingTx?editingTx.walletId:null)}</select></div>
+          <div class="field"><label>Note</label><input type="text" name="note" placeholder="optional" value="${editingTx?escapeHtml(editingTx.note||''):''}"></div>
+          <button class="btn" type="submit">${editingTx?'Update Entry':'Add Entry'}</button>
+          ${editingTx?`<button class="btn ghost small" type="button" id="cancelPersonEdit">Cancel</button>`:''}
+        </form>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
+          <tbody id="txBody">
+            ${activeTx.length===0?`<tr class="empty-row"><td colspan="5">No entries for ${escapeHtml(activePersonObj.name)} yet</td></tr>`:''}
+            ${activeTx.map(t=>{
+              const inflow = t.type==='given'||t.type==='you_repaid';
+              return `<tr><td>${h(t.date)}</td><td><span class="badge ${inflow?'out':'in'}">${peopleTypeLabel(t.type)}</span></td><td class="num">${money(t.amount)}</td><td>${escapeHtml(t.note||'')}</td><td><button class="btn ghost small" data-edittx="${t.id}">Edit</button> <button class="btn ghost small" data-deltx="${t.id}">Delete</button></td></tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>` : `<p class="section-sub">Add a person to start recording entries.</p>`}
+      </div>
+    </div>`;
+
+  const personForm = document.getElementById('personForm');
+  personForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(personForm, async ()=>{
+      const fd = new FormData(personForm);
+      const p = {id:uid(), name:fd.get('name')}; state.people.push(p); state.activePerson = p.id;
+      await saveNew('people', 'mf_people', p);
+    });
+  });
+  document.getElementById('peopleList').addEventListener('click', e=>{
+    const row = e.target.closest('.person-row'); if(!row) return;
+    state.activePerson = row.dataset.person; editingPersonTxId = null; render();
+  });
+  const archPersonBtn = document.getElementById('archPersonBtn');
+  if(archPersonBtn) archPersonBtn.onclick = ()=> toggleArchive('people','mf_people',state.activePerson);
+  const delPersonBtn = document.getElementById('delPersonBtn');
+  if(delPersonBtn) delPersonBtn.onclick = async ()=>{
+    const id = state.activePerson;
+    if(state.peopleTx.some(t=>t.personId===id)){ alert('Is person ki entries hain — delete nahi ho sakta. "Archive" karo (history safe rehti hai).'); return; }
+    if(!confirm('Is person ko delete karna hai? (koi entry nahi hai)')) return;
+    await saveDelete('people','mf_people',id); fixActiveSelections(); render();
+  };
+  const txForm = document.getElementById('txForm');
+  if(txForm) txForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(txForm, async ()=>{
+      const fd = new FormData(txForm);
+      const date = requireDate(fd.get('date'));
+      if(editingPersonTxId){
+        const t = state.peopleTx.find(x=>x.id===editingPersonTxId); const snap_ = t ? {...t} : null;
+        if(t){ t.date=date; t.type=fd.get('type'); t.amount=Number(fd.get('amount')); t.walletId=fd.get('walletId')||null; t.note=fd.get('note'); }
+        editingPersonTxId = null;
+        if(t) await saveEdit('mf_people_tx', t, snap_);
+        render(); return;
+      }
+      const item = {id:uid(), personId:state.activePerson, date, type:fd.get('type'), amount:Number(fd.get('amount')), walletId:fd.get('walletId')||null, note:fd.get('note')};
+      state.peopleTx.push(item);
+      await saveNew('peopleTx', 'mf_people_tx', item);
+    });
+  });
+  const cancelBtn = document.getElementById('cancelPersonEdit');
+  if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingPersonTxId = null; render(); });
+  const txBody = document.getElementById('txBody');
+  if(txBody) txBody.addEventListener('click', async e=>{
+    const editId = e.target.dataset.edittx;
+    if(editId){ editingPersonTxId = editId; render(); return; }
+    const id = e.target.dataset.deltx; if(!id) return;
+    if(!confirmDelete()) return;
+    await saveDelete('peopleTx', 'mf_people_tx', id);
+  });
+}
+
+/* ---------------- CREDIT CARD ---------------- */
+let editingCardTxId = null;
+function renderCards(){
+  if(!state.activeCard && state.cards.length>0) state.activeCard = state.cards[0].id;
+  const cardOptions = (sel) => state.cards.filter(c=>!isArchived(c)||c.id===sel).map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+  const outstandingOf = cid => r2(state.cardTx.filter(t=>t.cardId===cid).reduce((s,t)=> s + (t.type==='withdraw'? Number(t.amount||0) : -Number(t.amount||0)), 0));
+  const totalOutstanding = r2(state.cards.reduce((s,c)=>s+outstandingOf(c.id),0));
+  const sortedTx = [...state.cardTx].sort((a,b)=>a.date<b.date?1:-1);
+  const typeLabel = {withdraw:'Withdrawal', advance:'Advance Payment', bill:'Bill Payment'};
+  const typeBadge = {withdraw:'out', advance:'in', bill:'in'};
+  const editingTx = editingCardTxId ? state.cardTx.find(t=>t.id===editingCardTxId) : null;
+
+  main.innerHTML = `
+    <h2 class="section-title">Credit Card</h2>
+    <p class="section-sub">Log withdrawals, advance payments and full bill payments date-wise — outstanding is calculated automatically</p>
+    <form class="entry-form" id="cardAddForm">
+      <div class="field"><label>Card Name</label><input type="text" name="name" placeholder="e.g. Amazon Pay" required></div>
+      <button class="btn" type="submit">Add Card</button>
+      <label class="mini-tag" style="display:flex;gap:4px;align-items:center;"><input type="checkbox" id="showArchChk" ${state.showArchived?'checked':''}> Archived dikhao</label>
+    </form>
+    ${state.cards.length ? `<div class="cards" id="cardBoxes" style="grid-template-columns:repeat(${Math.max(1,Math.min(visCards().length,4))},1fr);">
+      ${visCards().map(c=>`<div class="card"><div class="label">${escapeHtml(c.name)}${isArchived(c)?' (archived)':''}</div><div class="value ${outstandingOf(c.id)>=0?'neg':'pos'}">${money(outstandingOf(c.id))}</div><div style="margin-top:8px;"><button class="btn ghost small" data-archcard="${c.id}">${isArchived(c)?'Restore':'Archive'}</button> <button class="btn ghost small" data-delcardacct="${c.id}">Delete</button></div></div>`).join('')}
+    </div>` : ''}
+    ${state.cards.length===0 ? `<p class="section-sub">Add a card above before logging spends.</p>` : `
+    <form class="entry-form" id="cardTxForm">
+      <div class="field"><label>Card</label><select name="cardId">${cardOptions(editingTx?editingTx.cardId:null)}</select></div>
+      <div class="field"><label>Entry Type</label><select name="type">
+        <option value="withdraw" ${editingTx&&editingTx.type==='withdraw'?'selected':''}>Withdrawal (cash out)</option>
+        <option value="advance" ${editingTx&&editingTx.type==='advance'?'selected':''}>Advance Payment</option>
+        <option value="bill" ${editingTx&&editingTx.type==='bill'?'selected':''}>Bill Payment (full outstanding)</option>
+      </select></div>
+      ${dateFieldHTML('date', editingTx?editingTx.date:todayStr())}
+      <div class="field"><label>Amount</label><input type="number" name="amount" placeholder="0" step="any" value="${editingTx?editingTx.amount:''}" required></div>
+      <div class="field"><label>Via Wallet</label><select name="walletId">${walletOptions(editingTx?editingTx.walletId:null)}</select></div>
+      <div class="field"><label>Note</label><input type="text" name="note" placeholder="optional" value="${editingTx?escapeHtml(editingTx.note||''):''}"></div>
+      <button class="btn" type="submit">${editingTx?'Update Entry':'Add Entry'}</button>
+      ${editingTx?`<button class="btn ghost small" type="button" id="cancelCardEdit">Cancel</button>`:''}
+    </form>`}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Card</th><th>Type</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
+      <tbody id="cardTxBody">
+        ${sortedTx.length===0?`<tr class="empty-row"><td colspan="6">No entries logged yet</td></tr>`:''}
+        ${sortedTx.map(t=>`<tr><td>${h(t.date)}</td><td>${escapeHtml(nameOfCard(t.cardId))}</td><td><span class="badge ${typeBadge[t.type]||'out'}">${typeLabel[t.type]||t.type}</span></td><td class="num">${money(t.amount)}</td><td>${escapeHtml(t.note||'')}</td><td><button class="btn ghost small" data-editcard="${t.id}">Edit</button> <button class="btn ghost small" data-delcard="${t.id}">Delete</button></td></tr>`).join('')}
+        ${sortedTx.length>0?`<tr class="totals-row"><td colspan="3">Total Outstanding (all cards)</td><td class="num">${money(totalOutstanding)}</td><td colspan="2"></td></tr>`:''}
+      </tbody>
+    </table></div>`;
+
+  const cardAddForm = document.getElementById('cardAddForm');
+  cardAddForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(cardAddForm, async ()=>{
+      const fd = new FormData(cardAddForm);
+      const c = {id:uid(), name:fd.get('name')}; state.cards.push(c); state.activeCard = c.id;
+      await saveNew('cards', 'mf_cards', c);
+    });
+  });
+  const cardBoxes = document.getElementById('cardBoxes');
+  if(cardBoxes) cardBoxes.addEventListener('click', async e=>{
+    const a = e.target.dataset.archcard;
+    if(a){ await toggleArchive('cards','mf_cards',a); return; }
+    const d = e.target.dataset.delcardacct; if(!d) return;
+    if(state.cardTx.some(t=>t.cardId===d)){ alert('Is card ki entries hain — delete nahi ho sakta. "Archive" karo (history safe rehti hai).'); return; }
+    if(!confirm('Is card ko delete karna hai? (koi entry nahi hai)')) return;
+    await saveDelete('cards','mf_cards',d); fixActiveSelections(); render();
+  });
+  const cardTxForm = document.getElementById('cardTxForm');
+  if(cardTxForm) cardTxForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(cardTxForm, async ()=>{
+      const fd = new FormData(cardTxForm);
+      const date = requireDate(fd.get('date'));
+      if(editingCardTxId){
+        const t = state.cardTx.find(x=>x.id===editingCardTxId); const snap_ = t ? {...t} : null;
+        if(t){ t.cardId=fd.get('cardId'); t.type=fd.get('type'); t.date=date; t.amount=Number(fd.get('amount')); t.walletId=fd.get('walletId')||null; t.note=fd.get('note'); }
+        editingCardTxId = null;
+        if(t) await saveEdit('mf_card_tx', t, snap_);
+        render(); return;
+      }
+      const item = {id:uid(), cardId:fd.get('cardId'), type:fd.get('type'), date, amount:Number(fd.get('amount')), walletId:fd.get('walletId')||null, note:fd.get('note')};
+      state.cardTx.push(item);
+      await saveNew('cardTx', 'mf_card_tx', item);
+    });
+  });
+  const cancelBtn = document.getElementById('cancelCardEdit');
+  if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingCardTxId = null; render(); });
+  document.getElementById('cardTxBody').addEventListener('click', async e=>{
+    const editId = e.target.dataset.editcard;
+    if(editId){ editingCardTxId = editId; render(); return; }
+    const id = e.target.dataset.delcard; if(!id) return;
+    if(!confirmDelete()) return;
+    await saveDelete('cardTx', 'mf_card_tx', id);
+  });
+}
+
+/* ---------------- EXPENSES ---------------- */
+let editingExpenseId = null;
+function renderExpenses(){
+  const sorted = [...state.expenses].sort((a,b)=>a.date<b.date?1:-1);
+  const total = state.expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+  const editingE = editingExpenseId ? state.expenses.find(e=>e.id===editingExpenseId) : null;
+  const catOptions = state.expenseCategories.map(c=>`<option value="${escapeHtml(c)}" ${editingE&&editingE.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('') + `<option value="__new__">+ Add new category…</option>`;
+  main.innerHTML = `
+    <h2 class="section-title">Expenses</h2>
+    <p class="section-sub">Itemized expenses — rent, bills, EMI, medicine, etc. These feed automatically into Monthly Summary and the linked wallet</p>
+    <form class="entry-form" id="expForm">
+      ${dateFieldHTML('date', editingE?editingE.date:todayStr())}
+      <div class="field"><label>Category</label><select name="categorySelect">${catOptions}</select></div>
+      <div class="field" id="newCatField" style="display:none;"><label>New Category Name</label><input type="text" id="newCatInput" placeholder="e.g. Bike Maintenance"></div>
+      <div class="field"><label>Amount</label><input type="number" name="amount" placeholder="0" step="any" value="${editingE?editingE.amount:''}" required></div>
+      <div class="field"><label>Paid Via</label><select name="walletId">${walletOptions(editingE?editingE.walletId:null)}</select></div>
+      <div class="field"><label>Note</label><input type="text" name="note" placeholder="optional" value="${editingE?escapeHtml(editingE.note||''):''}"></div>
+      <button class="btn" type="submit">${editingE?'Update Expense':'Add Expense'}</button>
+      ${editingE?`<button class="btn ghost small" type="button" id="cancelExpEdit">Cancel</button>`:''}
+    </form>
+    ${categoryManagerHtml('mf_exp_categories', state.expenseCategories)}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Category</th><th class="num">Amount</th><th>Paid Via</th><th>Note</th><th></th></tr></thead>
+      <tbody id="expBody">
+        ${sorted.length===0?`<tr class="empty-row"><td colspan="6">No expenses logged yet</td></tr>`:''}
+        ${sorted.map(e=>`<tr><td>${h(e.date)}</td><td>${escapeHtml(e.category)}</td><td class="num">${money(e.amount)}</td><td><span class="mini-tag">${e.walletId?escapeHtml(nameOfWallet(e.walletId)):'—'}</span></td><td>${escapeHtml(e.note||'')}</td><td><button class="btn ghost small" data-editexp="${e.id}">Edit</button> <button class="btn ghost small" data-delexp="${e.id}">Delete</button></td></tr>`).join('')}
+        ${sorted.length>0?`<tr class="totals-row"><td colspan="2">Total</td><td class="num">${money(total)}</td><td colspan="3"></td></tr>`:''}
+      </tbody>
+    </table></div>`;
+  const catSelect = document.querySelector('#expForm select[name="categorySelect"]');
+  catSelect.addEventListener('change', ()=>{
+    document.getElementById('newCatField').style.display = catSelect.value==='__new__' ? '' : 'none';
+  });
+  const expForm = document.getElementById('expForm');
+  expForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(expForm, async ()=>{
+      const fd = new FormData(expForm);
+      let category = fd.get('categorySelect');
+      if(category==='__new__'){
+        category = document.getElementById('newCatInput').value.trim();
+        if(!category) return;
+        if(!state.expenseCategories.includes(category)){ state.expenseCategories.push(category); await remoteCall('addCategory', 'mf_exp_categories', category); }
+      }
+      const date = requireDate(fd.get('date'));
+      if(editingExpenseId){
+        const x = state.expenses.find(e=>e.id===editingExpenseId); const snap_ = x ? {...x} : null;
+        if(x){ x.date=date; x.category=category; x.amount=Number(fd.get('amount')); x.walletId=fd.get('walletId')||null; x.note=fd.get('note'); }
+        editingExpenseId = null;
+        if(x) await saveEdit('mf_expenses', x, snap_);
+        render(); return;
+      }
+      const item = {id:uid(), date, category, amount:Number(fd.get('amount')), walletId:fd.get('walletId')||null, note:fd.get('note')};
+      state.expenses.push(item);
+      await saveNew('expenses', 'mf_expenses', item);
+    });
+  });
+  const cancelBtn = document.getElementById('cancelExpEdit');
+  if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingExpenseId = null; render(); });
+  document.getElementById('expBody').addEventListener('click', async e=>{
+    const editId = e.target.dataset.editexp;
+    if(editId){ editingExpenseId = editId; render(); return; }
+    const id = e.target.dataset.delexp; if(!id) return;
+    if(!confirmDelete()) return;
+    await saveDelete('expenses', 'mf_expenses', id);
+  });
+}
+
+/* ---------------- DAILY LEDGER (income) ---------------- */
+let editingDailyId = null;
+function renderDaily(){
+  if(!state.dailyViewMode) state.dailyViewMode = 'day';
+  if(!state.dailyDate) state.dailyDate = todayStr();
+  const byTime = (a,b)=> (a.date===b.date) ? (a.time||'').localeCompare(b.time||'') : (a.date<b.date?-1:1);
+  const dayRows = state.daily.filter(d=>d.date===state.dailyDate).sort(byTime);
+  const monthRows = state.daily.filter(d=>d.date.slice(0,7)===state.dailyMonth).sort(byTime);
+  const viewRows = state.dailyViewMode==='day' ? dayRows : monthRows;
+  const total = viewRows.reduce((s,d)=>s+Number(d.amount||0),0);
+  const monthOptions = getAvailableMonths().map(m=>`<option value="${m}" ${m===state.dailyMonth?'selected':''}>${formatMonth(m)}</option>`).join('');
+  const editingD = editingDailyId ? state.daily.find(d=>d.id===editingDailyId) : null;
+  const catOptions = state.dailyCategories.map(c=>`<option value="${escapeHtml(c)}" ${editingD&&editingD.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('') + `<option value="__new__">+ Add new category…</option>`;
+  const nowTime = new Date().toTimeString().slice(0,5);
+
+  main.innerHTML = `
+    <h2 class="section-title">Daily Ledger</h2>
+    <p class="section-sub">Record day-by-day income — ticket bookings, services, etc. Totals feed automatically into Monthly Summary and the linked wallet</p>
+    <form class="entry-form" id="dailyForm">
+      ${dateFieldHTML('date', editingD?editingD.date:todayStr())}
+      <div class="field"><label>Time</label><input type="time" name="time" value="${editingD?(editingD.time||nowTime):nowTime}"></div>
+      <div class="field"><label>Category</label><select name="categorySelect">${catOptions}</select></div>
+      <div class="field" id="newCatField" style="display:none;"><label>New Category Name</label><input type="text" id="newCatInput" placeholder="e.g. Aadhar Update"></div>
+      <div class="field"><label>Amount</label><input type="number" name="amount" placeholder="0" step="any" value="${editingD?editingD.amount:''}" required></div>
+      <div class="field"><label>Received Via</label><select name="walletId">${walletOptions(editingD?editingD.walletId:null)}</select></div>
+      <div class="field"><label>Note</label><input type="text" name="note" placeholder="optional" value="${editingD?escapeHtml(editingD.note||''):''}"></div>
+      <button class="btn" type="submit">${editingD?'Update Entry':'Add Entry'}</button>
+      ${editingD?`<button class="btn ghost small" type="button" id="cancelDailyEdit">Cancel</button>`:''}
+    </form>
+    ${categoryManagerHtml('mf_daily_categories', state.dailyCategories)}
+    <div class="toolbar">
+      <div class="pill-select">
+        <span class="pill-opt ${state.dailyViewMode==='day'?'active':''}" data-mode="day">Single Day</span>
+        <span class="pill-opt ${state.dailyViewMode==='month'?'active':''}" data-mode="month">Whole Month</span>
+      </div>
+      ${state.dailyViewMode==='day'
+        ? `<div style="display:flex; align-items:center; gap:10px;">${dateFieldHTML('viewDate', state.dailyDate, 'Viewing')}<div style="font-family:'IBM Plex Mono',monospace; font-weight:600;">Day Total: ${money(total)}</div></div>`
+        : `<select class="month-select" id="dailyMonthSelect">${monthOptions}</select><div style="font-family:'IBM Plex Mono',monospace; font-weight:600;">Month Total: ${money(total)}</div>`}
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Time</th><th>Category</th><th class="num">Amount</th><th>Received Via</th><th>Note</th><th></th></tr></thead>
+      <tbody id="dailyBody">
+        ${viewRows.length===0?`<tr class="empty-row"><td colspan="7">No entries for ${h(state.dailyViewMode==='day'?state.dailyDate:formatMonth(state.dailyMonth))}</td></tr>`:''}
+        ${viewRows.map(d=>`<tr><td>${h(d.date)}</td><td class="mini-tag">${h(d.time||'—')}</td><td>${escapeHtml(d.category||'—')}</td><td class="num">${money(d.amount)}</td><td><span class="mini-tag">${d.walletId?escapeHtml(nameOfWallet(d.walletId)):'—'}</span></td><td>${escapeHtml(d.note||'')}</td><td><button class="btn ghost small" data-editdaily="${d.id}">Edit</button> <button class="btn ghost small" data-deldaily="${d.id}">Delete</button></td></tr>`).join('')}
+      </tbody>
+    </table></div>`;
+
+  document.querySelectorAll('.pill-opt').forEach(p=>p.addEventListener('click', ()=>{ state.dailyViewMode = p.dataset.mode; render(); }));
+  const viewDateInput = document.querySelector('input[name="viewDate"]');
+  if(viewDateInput) viewDateInput.addEventListener('change', ()=>{ const vd = parseDateStrict(viewDateInput.value); if(vd) state.dailyDate = vd; render(); });
+  const catSelect = document.querySelector('#dailyForm select[name="categorySelect"]');
+  catSelect.addEventListener('change', ()=>{
+    document.getElementById('newCatField').style.display = catSelect.value==='__new__' ? '' : 'none';
+  });
+  const dailyForm = document.getElementById('dailyForm');
+  dailyForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    withSubmitLock(dailyForm, async ()=>{
+      const fd = new FormData(dailyForm); const date = requireDate(fd.get('date')); const time = fd.get('time')||'';
+      let category = fd.get('categorySelect');
+      if(category==='__new__'){
+        category = document.getElementById('newCatInput').value.trim();
+        if(!category) return;
+        if(!state.dailyCategories.includes(category)){ state.dailyCategories.push(category); await remoteCall('addCategory', 'mf_daily_categories', category); }
+      }
+      if(editingDailyId){
+        const d = state.daily.find(x=>x.id===editingDailyId); const snap_ = d ? {...d} : null;
+        if(d){ d.date=date; d.time=time; d.category=category; d.amount=Number(fd.get('amount')); d.walletId=fd.get('walletId')||null; d.note=fd.get('note'); }
+        editingDailyId = null;
+        if(d) await saveEdit('mf_daily', d, snap_);
+        render(); return;
+      }
+      const item = {id:uid(), date, time, category, amount:Number(fd.get('amount')), walletId:fd.get('walletId')||null, note:fd.get('note')};
+      state.daily.push(item);
+      state.dailyMonth = date.slice(0,7);
+      state.dailyDate = date; state.dailyViewMode = 'day';
+      await saveNew('daily', 'mf_daily', item);
+    });
+  });
+  const cancelBtn = document.getElementById('cancelDailyEdit');
+  if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingDailyId = null; render(); });
+  const monthSel = document.getElementById('dailyMonthSelect');
+  if(monthSel) monthSel.addEventListener('change', e=>{ state.dailyMonth = e.target.value; render(); });
+  document.getElementById('dailyBody').addEventListener('click', async e=>{
+    const editId = e.target.dataset.editdaily;
+    if(editId){ editingDailyId = editId; render(); return; }
+    const id = e.target.dataset.deldaily; if(!id) return;
+    if(!confirmDelete()) return;
+    await saveDelete('daily', 'mf_daily', id);
+  });
+}
+function getAvailableMonths(){
+  const set = new Set(state.daily.map(d=>d.date.slice(0,7)));
+  set.add(state.dailyMonth); set.add(todayStr().slice(0,7));
+  return Array.from(set).sort().reverse();
+}
+function formatMonth(m){ const [y,mo] = m.split('-'); return monthNames[Number(mo)-1] + ' ' + y; }
+
+/* ---------------- MONTHLY SUMMARY (auto-computed) ---------------- */
+function renderMonthly(){
+  const years = getYearsList();
+  main.innerHTML = `
+    <h2 class="section-title">Monthly Summary</h2>
+    <p class="section-sub">Auto-calculated from Daily Ledger + Expenses. Use "Manual Base" only for historical months entered before you started using this app.</p>
+    <form class="entry-form" id="yearForm">
+      <div class="field"><label>Add Year</label><input type="number" name="year" placeholder="e.g. 2027" required></div>
+      <button class="btn" type="submit">Add Year</button>
+    </form>
+    ${years.map(y=>{
+      const rows = monthNames.map(mn=>({month:mn, ...computeMonth(y,mn)}));
+      const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.totalIncome, r.totalExpense)));
+      const yearIncome = rows.reduce((s,r)=>s+r.totalIncome,0), yearExpense = rows.reduce((s,r)=>s+r.totalExpense,0), yearNet = yearIncome-yearExpense;
+      return `
+      <div class="month-block">
+        <h3>${y} <span style="font-size:12px; font-weight:500; color:var(--muted); font-family:'Inter';">— Net ${money(yearNet)}</span></h3>
+        ${rows.map(r=>{
+          const inPct = Math.round((r.totalIncome/maxVal)*100), outPct = Math.round((r.totalExpense/maxVal)*100);
+          return `
+          <div class="mo-row">
+            <div>${r.month.slice(0,3)}</div>
+            <div>
+              <div class="mo-bar-track" style="margin-bottom:3px;"><div class="mo-bar-in" style="width:${inPct}%"></div></div>
+              <div class="mo-bar-track"><div class="mo-bar-out" style="width:${outPct}%"></div></div>
+            </div>
+            <div class="mo-net ${r.net>=0?'pos-text':'neg-text'}">${money(r.net)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="table-wrap"><table style="margin-bottom:22px;">
+        <thead><tr><th>Month</th><th class="num">Manual Base<br><span class="sub-label">Income</span></th><th class="num">Daily Total</th><th class="num">Total Income</th><th class="num">Manual Base<br><span class="sub-label">Expense</span></th><th class="num">Logged</th><th class="num">Total Expense</th><th class="num">Net</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td>${r.month}</td>
+            <td class="num"><input class="mono-input mo-input" data-year="${y}" data-month="${r.month}" data-field="incomeBase" type="number" step="any" value="${r.incomeBase||0}"></td>
+            <td class="num">${money(r.dailyIncome)}</td>
+            <td class="num pos-text">${money(r.totalIncome)}</td>
+            <td class="num"><input class="mono-input mo-input" data-year="${y}" data-month="${r.month}" data-field="expenseBase" type="number" step="any" value="${r.expenseBase||0}"></td>
+            <td class="num">${money(r.loggedExpense)}</td>
+            <td class="num neg-text">${money(r.totalExpense)}</td>
+            <td class="num ${r.net>=0?'pos-text':'neg-text'}">${money(r.net)}</td>
+          </tr>`).join('')}
+          <tr class="totals-row">
+            <td>Total</td><td></td><td></td>
+            <td class="num">${money(yearIncome)}</td>
+            <td></td><td></td>
+            <td class="num">${money(yearExpense)}</td>
+            <td class="num">${money(yearNet)}</td>
+          </tr>
+        </tbody>
+      </table></div>`;
+    }).join('')}`;
+
+  document.getElementById('yearForm').addEventListener('submit', e=>{
+    e.preventDefault(); const fd = new FormData(e.target); const y = Number(fd.get('year'));
+    if(!(Number.isInteger(y) && y>=2000 && y<=2100)){ alert('Saal 2000 se 2100 ke beech hona chahiye.'); return; }
+    const added = [];
+    monthNames.forEach(mn=>{
+      if(!state.monthly.find(m=>m.month===mn && Number(m.year)===y)){ const row = {id:uid(), month:mn, year:y, incomeBase:0, expenseBase:0}; state.monthly.push(row); added.push(row); }
+    });
+    (added.length ? saveNewMany('monthly', 'mf_monthly', added) : Promise.resolve(true)).then(render);
+  });
+  document.querySelectorAll('.mo-input').forEach(inp=>{
+    inp.addEventListener('change', async e=>{
+      const {year, month, field} = e.target.dataset; const val = Number(e.target.value)||0;
+      let row = state.monthly.find(m=>m.month===month && Number(m.year)===Number(year));
+      if(!row){ row = {id:uid(), month, year:Number(year), incomeBase:0, expenseBase:0}; state.monthly.push(row); }
+      const prev = row[field]; row[field] = val;
+      const savedOk = await upsertItemRemote('mf_monthly', row.id, row);
+      if(!savedOk) row[field] = prev;
+      render();
+    });
+  });
+}
+
+/* ---------------- EXCEL EXPORT / IMPORT ---------------- */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const btn = document.getElementById('exportBtn');
+  const original = btn.textContent;
+  try{
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.wallets.map(w=>({ID:w.id, Wallet:w.name, OpeningBalance:w.openingBalance, CurrentBalance:walletBalance(w.id), Archived:w.archived||''}))), 'Wallets');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.walletTx.map(t=>({ID:t.id, Wallet:nameOfWallet(t.walletId), Date:t.date, Type:t.type==='credit'?'In':'Out', Amount:t.amount, Note:t.note||'', TransferID:t.transferId||''}))), 'Wallet_Entries');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.peopleTx.map(t=>({ID:t.id, Person:nameOfPerson(t.personId), Date:t.date, Type:peopleTypeLabel(t.type), Amount:t.amount, ViaWallet:t.walletId?nameOfWallet(t.walletId):'', Note:t.note||''}))), 'People_Ledger');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.cardTx.map(t=>({ID:t.id, Card:nameOfCard(t.cardId), Date:t.date, Type:t.type||'withdraw', Amount:t.amount, ViaWallet:t.walletId?nameOfWallet(t.walletId):'', Note:t.note||''}))), 'Credit_Card');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.expenses.map(e=>({ID:e.id, Date:e.date, Category:e.category, Amount:e.amount, PaidVia:e.walletId?nameOfWallet(e.walletId):'', Note:e.note||''}))), 'Expenses');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.daily.map(d=>({ID:d.id, Date:d.date, Time:d.time||'', Category:d.category||'', Amount:d.amount, ReceivedVia:d.walletId?nameOfWallet(d.walletId):'', Note:d.note||''}))), 'Daily_Income');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.people.map(p=>({ID:p.id, Person:p.name, Archived:p.archived||''}))), 'People');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.cards.map(c=>({ID:c.id, Card:c.name, Archived:c.archived||''}))), 'Cards');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.expenseCategories.map(c=>({Category:c}))), 'Expense_Categories');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.dailyCategories.map(c=>({Category:c}))), 'Daily_Categories');
+    const monthlyRows = [];
+    getYearsList().forEach(y=>monthNames.forEach(mn=>{
+      const c = computeMonth(y, mn);
+      monthlyRows.push({Year:y, Month:mn, ManualIncome:c.incomeBase, DailyIncome:c.dailyIncome, TotalIncome:c.totalIncome, ManualExpense:c.expenseBase, LoggedExpense:c.loggedExpense, TotalExpense:c.totalExpense, Net:c.net});
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monthlyRows), 'Monthly_Summary');
+    const filename = `Mazumder-Infotech-Ledger-${todayStr()}.xlsx`;
+    try{
+      XLSX.writeFile(wb, filename);
+    }catch(innerErr){
+      const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+      const blob = new Blob([wbout], {type:'application/octet-stream'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+    }
+    btn.textContent = '✓ Downloaded';
+    setTimeout(()=>{ btn.textContent = original; }, 2200);
+  }catch(err){
+    console.error('Export failed', err);
+    alert('Export fail ho gaya: ' + (err.message||err));
+  }
+});
+
+
+/* ---------- CSV snapshot (ported from the original app; saves a file, no Drive push) ---------- */
+function csvEsc(v){
+  let s = (v===undefined || v===null) ? '' : String(v);
+  if(typeof v==='string' && /^[=+\-@]/.test(s)) s = "'" + s; // stop spreadsheet formula injection
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function buildCsvExport(){
+  const L = [], row = (...c)=>L.push(c.map(csvEsc).join(','));
+  L.push('MAZUMDER INFOTECH — LEDGER SNAPSHOT'); row('Generated', new Date().toLocaleString('en-IN')); L.push('');
+  L.push('WALLETS'); row('Wallet','OpeningBalance','CurrentBalance','Archived');
+  state.wallets.forEach(w=>row(w.name, w.openingBalance, walletBalance(w.id), isArchived(w)?'yes':'')); L.push('');
+  L.push('WALLET ENTRIES'); row('Wallet','Date','Type','Amount','Note','TransferID');
+  state.walletTx.forEach(t=>row(nameOfWallet(t.walletId), t.date, t.type==='credit'?'In':'Out', t.amount, t.note||'', t.transferId||'')); L.push('');
+  L.push('PEOPLE LEDGER'); row('Person','Date','Type','Amount','ViaWallet','Note');
+  state.peopleTx.forEach(t=>row(nameOfPerson(t.personId), t.date, peopleTypeLabel(t.type), t.amount, t.walletId?nameOfWallet(t.walletId):'', t.note||'')); L.push('');
+  L.push('CREDIT CARD'); row('Card','Date','Type','Amount','ViaWallet','Note');
+  state.cardTx.forEach(t=>row(nameOfCard(t.cardId), t.date, t.type||'withdraw', t.amount, t.walletId?nameOfWallet(t.walletId):'', t.note||'')); L.push('');
+  L.push('EXPENSES'); row('Date','Category','Amount','PaidVia','Note');
+  state.expenses.forEach(e=>row(e.date, e.category, e.amount, e.walletId?nameOfWallet(e.walletId):'', e.note||'')); L.push('');
+  L.push('DAILY INCOME'); row('Date','Time','Category','Amount','ReceivedVia','Note');
+  state.daily.forEach(d=>row(d.date, d.time||'', d.category||'', d.amount, d.walletId?nameOfWallet(d.walletId):'', d.note||'')); L.push('');
+  L.push('MONTHLY SUMMARY'); row('Year','Month','ManualIncome','DailyIncome','TotalIncome','ManualExpense','LoggedExpense','TotalExpense','Net');
+  getYearsList().forEach(y=>monthNames.forEach(mn=>{ const c = computeMonth(y, mn); row(y, mn, c.incomeBase, c.dailyIncome, c.totalIncome, c.expenseBase, c.loggedExpense, c.totalExpense, c.net); }));
+  return L.join('\n');
+}
+document.getElementById('csvBtn').addEventListener('click', ()=>{
+  try{
+    const blob = new Blob(['\uFEFF' + buildCsvExport()], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `Mazumder-Infotech-Ledger-${todayStr()}.csv`; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }catch(err){ console.error('CSV export failed', err); alert('CSV export fail ho gaya: ' + (err.message||err)); }
+});
+
+document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshBtn');
+  const original = btn.textContent;
+  btn.textContent = '🔄 Refreshing…'; btn.disabled = true;
+  try{ await refreshNow(); }catch(e){ showLoadError(e); }
+  btn.textContent = original; btn.disabled = false;
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  if(!requireLoaded()){ e.target.value = ''; return; }
+  if(!confirm('Import se Sheet ka current data replace ho jayega (pehle automatic backup banega). Aage badhna hai?')){ e.target.value = ''; return; }
+  try{
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array'});
+  const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name]) : [];
+  const usedImportIds = new Set();
+  const importId = v => { let id = (typeof v==='string' || typeof v==='number') ? String(v) : ''; if(!SAFE_ID.test(id) || usedImportIds.has(id)) id = uid(); usedImportIds.add(id); return id; };
+  const archFlag = v => (v==='1' || v===1) ? '1' : '';
+
+  const walletsIn = sheet('Wallets');
+  if(walletsIn.length) state.wallets = walletsIn.map(r=>({id:importId(r.ID), name:r.Wallet||r.wallet||'Wallet', openingBalance:Number(r.OpeningBalance ?? r.Balance ?? 0), archived:archFlag(r.Archived)}));
+  const walletIdByName = name => (state.wallets.find(w=>w.name===name)||{}).id || null;
+
+  const walletTxIn = sheet('Wallet_Entries');
+  if(walletTxIn.length) state.walletTx = walletTxIn.map(r=>({id:importId(r.ID), walletId:walletIdByName(r.Wallet), date:String(r.Date), type:(r.Type==='In')?'credit':'debit', amount:Number(r.Amount||0), note:r.Note||'', transferId:r.TransferID?String(r.TransferID):null})).filter(t=>t.walletId);
+
+  const peopleIn = sheet('People_Ledger');
+  if(peopleIn.length || sheet('People').length){
+    const names = Array.from(new Set(peopleIn.map(r=>r.Person)));
+    state.people = sheet('People').filter(r=>r.Person).map(r=>({id:importId(r.ID), name:r.Person, archived:archFlag(r.Archived)}));
+    names.forEach(n=>{ if(n && !state.people.find(p=>p.name===n)) state.people.push({id:uid(), name:n}); });
+    const typeFromLabel = lbl => ({'You Gave':'given','They Repaid':'they_repaid','You Borrowed':'borrowed','You Repaid':'you_repaid','Given':'given','Received':'they_repaid'}[lbl] || 'given');
+    state.peopleTx = peopleIn.map(r=>({id:importId(r.ID), personId:state.people.find(p=>p.name===r.Person).id, date:String(r.Date), type:typeFromLabel(r.Type), amount:Number(r.Amount||0), walletId:r.ViaWallet?walletIdByName(r.ViaWallet):null, note:r.Note||''}));
+    state.activePerson = state.people[0]?.id || null;
+  }
+
+  const cardsIn = sheet('Credit_Card');
+  if(cardsIn.length || sheet('Cards').length){
+    const names = Array.from(new Set(cardsIn.map(r=>r.Card)));
+    state.cards = sheet('Cards').filter(r=>r.Card).map(r=>({id:importId(r.ID), name:r.Card, archived:archFlag(r.Archived)}));
+    names.forEach(n=>{ if(n && !state.cards.find(c=>c.name===n)) state.cards.push({id:uid(), name:n}); });
+    state.cardTx = cardsIn.map(r=>({id:importId(r.ID), cardId:state.cards.find(c=>c.name===r.Card).id, type:r.Type||'withdraw', date:String(r.Date), amount:Number(r.Amount||0), walletId:r.ViaWallet?walletIdByName(r.ViaWallet):null, note:r.Note||''}));
+    state.activeCard = state.cards[0]?.id || null;
+  }
+
+  const expensesIn = sheet('Expenses');
+  if(expensesIn.length) state.expenses = expensesIn.map(r=>({id:importId(r.ID), date:String(r.Date), category:r.Category||'', amount:Number(r.Amount||0), walletId:r.PaidVia?walletIdByName(r.PaidVia):null, note:r.Note||''}));
+
+  const dailyIn = sheet('Daily_Income');
+  if(dailyIn.length) state.daily = dailyIn.map(r=>({id:importId(r.ID), date:String(r.Date), time:r.Time||'', category:r.Category||'', amount:Number(r.Amount||0), walletId:r.ReceivedVia?walletIdByName(r.ReceivedVia):null, note:r.Note||''}));
+
+  const monthlyIn = sheet('Monthly_Summary');
+  if(monthlyIn.length) state.monthly = monthlyIn.map(r=>({id:uid(), year:Number(r.Year), month:r.Month, incomeBase:Number(r.ManualIncome||0), expenseBase:Number(r.ManualExpense||0)}));
+
+  sheet('Expense_Categories').forEach(r=>{ if(r.Category && !state.expenseCategories.includes(String(r.Category))) state.expenseCategories.push(String(r.Category)); });
+  sheet('Daily_Categories').forEach(r=>{ if(r.Category && !state.dailyCategories.includes(String(r.Category))) state.dailyCategories.push(String(r.Category)); });
+  state.expenses.forEach(e=>{ if(e.category && !state.expenseCategories.includes(e.category)) state.expenseCategories.push(e.category); });
+  state.daily.forEach(d=>{ if(d.category && !state.dailyCategories.includes(d.category)) state.dailyCategories.push(d.category); });
+
+  const importProblems = sanitizeAll(state); // drop rows with impossible dates / bad ids etc. instead of failing the whole import
+  if(importProblems.length && !confirm(importProblems.length + ' row galat hain (jaise date/ID) — unhe chhod kar baaki import karein?\n\nPehli galti: ' + importProblems[0].tab + ' — ' + importProblems[0].why)){
+    try{ await loadAll(); }catch(_){}
+    e.target.value = ''; render(); return;
+  }
+  const saved = await persistAll();
+  e.target.value = '';
+  if(!saved){
+    try{ await loadAll(); }catch(_){}
+    render();
+    alert('Import save nahi ho paya — Sheet ka purana data waisa hi hai (screen refresh kar di).');
+    return;
+  }
+  render();
+  alert('Excel file imported — data Google Sheet me save ho gaya. Purana backup Drive ke "Mazumder Ledger Backups" folder me hai.');
+  }catch(err){
+    console.error('Import failed', err);
+    alert('Import fail ho gaya: ' + (err.message||err) + '\n\nFile sahi .xlsx honi chahiye (isi app se export ki hui, ya sahi sheet names ke saath).');
+    e.target.value = '';
+  }
+});
+
+
+/* ---------- Auto refresh across devices (Phase 3) ---------- */
+let pollTimer = null, toastTimer = null;
+function toast(msg){ const el = document.getElementById('toast'); if(!el) return; el.textContent = msg; el.style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ el.style.display = 'none'; }, 3500); }
+function editingAny(){ return !!(editingWalletTxId || editingWalletId || editingPersonTxId || editingCardTxId || editingExpenseId || editingDailyId); }
+/** True if the user is typing / has a half-filled form: we never refresh over that. */
+function formIsDirty(){
+  if(editingAny()) return true;
+  const ae = document.activeElement;
+  if(ae && main.contains(ae) && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return true;
+  return [...main.querySelectorAll('.entry-form input')].some(i=>!i.classList.contains('date-native') && i.type!=='checkbox' && i.value !== i.defaultValue);
+}
+async function pollOnce(){
+  if(document.hidden || !state.loaded || state.loading || isLocked()) return;
+  if(state.readOnly){ await tryReconnect(); return; }
+  if(retryQueue.length){ await flushQueue(); return; }
+  if(pending.size) return;
+  let v; try{ v = Number(await gsRun('getDataVersion')); }catch(e){ return; }
+  if(!isFinite(v) || v === state.dataVersion) return;
+  if(formIsDirty()) return; // try again next tick, never wipe a half-typed form
+  try{ await loadAll({silent:true}); render(); toast('Doosre device se update aaya ✓'); }catch(e){ /* keep current screen, retry later */ }
+}
+function startPolling(){ clearInterval(pollTimer); pollTimer = setInterval(pollOnce, 45000); }
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pollOnce(); });
+window.addEventListener('online', ()=>{ if(state.readOnly) tryReconnect(); else flushQueue(); });
+window.addEventListener('beforeunload', e=>{ if(retryQueue.length){ e.preventDefault(); e.returnValue = ''; } });
+document.getElementById('retryBtn').addEventListener('click', ()=>flushQueue());
+async function refreshNow(){
+  if(state.readOnly){ const ok = await tryReconnect(); if(!ok) toast('Abhi bhi offline hai'); return ok; }
+  if(retryQueue.length){
+    await flushQueue();
+    if(retryQueue.length){
+      if(!confirm(retryQueue.length + ' unsaved entry hain — Refresh karne se wo chali jayengi. Phir bhi?')) return false;
+      retryQueue.length = 0; unsaved.clear(); updatePending();
+    }
+  }
+  await loadAll(); render(); return true;
+}
+function probeStorage(){
+  let r = 'blocked';
+  try{ localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); r = 'available'; }catch(e){}
+  state.storageProbe = r; console.log('localStorage probe in this view:', r); updateFoot();
+}
+function updateFoot(){ const el = document.getElementById('diagFoot'); if(el) el.textContent = 'Ledger ' + (state.version ? 'v'+state.version : '') + ' · ' + (IN_APPS_SCRIPT ? 'Sheet app' : 'PWA') + ' · offline storage in this view: ' + (state.storageProbe || '…'); }
+main.addEventListener('click', async e=>{
+  const name = e.target.dataset && e.target.dataset.delcat; if(!name) return;
+  const key = e.target.closest('[data-catkey]').dataset.catkey;
+  if(!confirm('"' + name + '" category list se hata dein? (purani entries waisi hi rahengi)')) return;
+  const r = await remoteCall('deleteCategory', key, name);
+  if(!r.ok) return;
+  const arr = key==='mf_exp_categories' ? 'expenseCategories' : 'dailyCategories';
+  state[arr] = state[arr].filter(c=>c.toLowerCase()!==name.toLowerCase()); render();
+});
+
+
+/* ============================ PWA layer (hosted index.html only) ============================ */
+const VAULT_KEY = 'ledger.vault.v1', SNAP_KEY = 'ledger.snapshot.v1', LOCK_AFTER_MS = 15*60*1000;
+const API_URL_RE = /^https:\/\/script\.google\.com\/(?:a\/macros\/[A-Za-z0-9.-]+|macros)\/s\/[A-Za-z0-9_-]+\/exec$/; // the token is ONLY ever sent to a Google Apps Script URL
+const userError = msg => Object.assign(new Error(msg), {userMessage: msg});
+const b64 = buf => { const u = new Uint8Array(buf); let s = ''; for(let i=0;i<u.length;i+=0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i+0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+async function deriveKey(pin, salt){
+  if(!(window.crypto && crypto.subtle)) throw userError('Secure connection (https) chahiye — crypto available nahi hai.');
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, km, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function encJson(key, obj){ const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj))); return {iv:b64(iv), ct:b64(ct)}; }
+async function decJson(key, box){ const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(box.iv)}, key, unb64(box.ct)); return JSON.parse(new TextDecoder().decode(pt)); }
+const vaultCfg = () => { try{ return JSON.parse(localStorage.getItem(VAULT_KEY) || 'null'); }catch(e){ return null; } };
+
+/* ---- offline snapshot: last data, encrypted with the PIN-derived key, for READ-ONLY viewing when there is no internet ---- */
+async function saveSnapshot(raw){
+  if(IN_APPS_SCRIPT || !API.key) return;
+  try{ const json = JSON.stringify(raw); if(json.length > 2500000) return; localStorage.setItem(SNAP_KEY, JSON.stringify(await encJson(API.key, {t:Date.now(), raw}))); }
+  catch(e){ console.warn('snapshot skipped', e); }
+}
+async function loadSnapshot(){
+  if(!API.key) return null;
+  try{ const s = localStorage.getItem(SNAP_KEY); return s ? await decJson(API.key, JSON.parse(s)) : null; }catch(e){ return null; }
+}
+function showOfflineBanner(){
+  const el = document.getElementById('offlineBanner'); if(!el) return;
+  document.getElementById('offlineText').textContent = '📴 Offline — ' + new Date(state.snapshotAt).toLocaleString('en-IN') + ' tak ka data (sirf dekh sakte ho).';
+  el.style.display = 'flex';
+}
+function hideOfflineBanner(){ const el = document.getElementById('offlineBanner'); if(el) el.style.display = 'none'; }
+async function tryReconnect(){
+  if(isLocked()) return false;
+  try{ await loadAll({silent:true}); hideOfflineBanner(); render(); toast('Wapas online ✓ — ab save kar sakte ho'); return true; }catch(e){ return false; }
+}
+document.getElementById('reconnectBtn').addEventListener('click', async ()=>{ if(!(await tryReconnect())) toast('Abhi bhi offline hai'); });
+
+/* ---- pairing / PIN lock ---- */
+let unlockWaiters = [], lastActive = Date.now(), pinFails = 0, pinBlockedUntil = 0, idleTimer = null;
+function ensureUnlocked(){
+  if(IN_APPS_SCRIPT || API.token) return Promise.resolve();
+  return new Promise(res=>{ unlockWaiters.push(res); showLockOverlay(); });
+}
+function onUnlocked(){
+  const o = document.getElementById('lockOverlay'); if(o) o.remove();
+  lastActive = Date.now(); pinFails = 0;
+  document.getElementById('lockBtn').style.display = '';
+  const w = unlockWaiters; unlockWaiters = []; w.forEach(f=>f());
+  if(!w.length && state.loaded){ render(); pollOnce(); }
+}
+function lockApp(){
+  if(IN_APPS_SCRIPT || isLocked()) return;
+  API.token = ''; API.key = null;
+  main.innerHTML = '';
+  showLockOverlay();
+}
+function showLockOverlay(msg){
+  let o = document.getElementById('lockOverlay');
+  if(!o){ o = document.createElement('div'); o.id = 'lockOverlay'; document.body.appendChild(o); }
+  const cfg = vaultCfg(), paired = !!cfg;
+  o.innerHTML = paired ? `
+    <form class="lock-card" id="unlockForm" autocomplete="off">
+      <h2>🔒 Mazumder Ledger</h2><p>PIN daalo (ye device pehle se pair hai).</p>
+      <div class="field"><label>PIN</label><input type="password" name="pin" inputmode="numeric" autocomplete="current-password" autofocus required></div>
+      <div class="err" id="lockErr">${h(msg||'')}</div>
+      <button class="btn" type="submit" style="width:100%;">Unlock</button>
+      <button class="linkbtn" type="button" id="forgetBtn">Is device ko bhoolo (naya pairing)</button>
+    </form>` : `
+    <form class="lock-card" id="pairForm" autocomplete="off">
+      <h2>Pair this device</h2><p>Sheet me: Ledger menu &rarr; <b>PWA API: create / rotate token</b>. Phir "Anyone" wali Web App deployment ka URL aur token yahan daalo. Token is device par PIN se encrypt ho kar rakha jata hai.</p>
+      <div class="field"><label>Web App URL</label><input type="url" name="url" placeholder="https://script.google.com/macros/s/…/exec" required></div>
+      <div class="field"><label>API token</label><input type="password" name="token" autocomplete="off" required></div>
+      <div class="field"><label>Naya PIN (kam se kam 4)</label><input type="password" name="pin" inputmode="numeric" autocomplete="new-password" required></div>
+      <div class="field"><label>PIN dobara</label><input type="password" name="pin2" inputmode="numeric" autocomplete="new-password" required></div>
+      <div class="err" id="lockErr">${h(msg||'')}</div>
+      <button class="btn" type="submit" style="width:100%;">Pair &amp; unlock</button>
+    </form>`;
+  const err = t => { const e = document.getElementById('lockErr'); if(e) e.textContent = t; };
+  const f = o.querySelector('form');
+  f.onsubmit = async ev=>{
+    ev.preventDefault(); const fd = new FormData(f); const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
+    try{
+      if(paired){
+        if(Date.now() < pinBlockedUntil) throw userError('Bahut galat PIN — ' + Math.ceil((pinBlockedUntil-Date.now())/1000) + ' second ruko.');
+        await unlockDevice(String(fd.get('pin')||''));
+      } else {
+        await pairDevice(String(fd.get('url')||''), String(fd.get('token')||''), String(fd.get('pin')||''), String(fd.get('pin2')||''));
+      }
+    }catch(e){ err(e && e.userMessage || ('Error: ' + (e && e.message || e))); btn.disabled = false; }
+  };
+  const forget = document.getElementById('forgetBtn');
+  if(forget) forget.onclick = ()=>{ if(confirm('Is device ka pairing aur offline copy hata dein? (Sheet ka data safe rahega)')){ localStorage.removeItem(VAULT_KEY); localStorage.removeItem(SNAP_KEY); showLockOverlay(); } };
+}
+async function pairDevice(url, token, pin, pin2){
+  url = url.trim(); token = token.trim();
+  if(!API_URL_RE.test(url)) throw userError('URL sahi nahi hai. Format: https://script.google.com/macros/s/…/exec (Sheet ka naam wali "Anyone" deployment ka URL).');
+  if(token.length < 32) throw userError('Token chhota hai — poora token paste karo.');
+  if(pin.length < 4) throw userError('PIN kam se kam 4 characters ka rakho.');
+  if(pin !== pin2) throw userError('Dono PIN same nahi hain.');
+  API.url = url; API.token = token; pairingNow = true;
+  try{ await apiCall('getVersion', []); }
+  catch(e){ API.token = ''; throw userError('Pair nahi ho paya: ' + (e && e.message || e)); }
+  finally{ pairingNow = false; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKey(pin, salt);
+  localStorage.setItem(VAULT_KEY, JSON.stringify({v:1, url, salt:b64(salt), box:await encJson(key, {token})}));
+  API.key = key; onUnlocked();
+}
+async function unlockDevice(pin){
+  const cfg = vaultCfg(); if(!cfg) throw userError('Pairing nahi mili — dobara pair karo.');
+  const key = await deriveKey(pin, unb64(cfg.salt));
+  let token;
+  try{ token = (await decJson(key, cfg.box)).token; }
+  catch(e){ if(++pinFails >= 5){ pinBlockedUntil = Date.now() + 30000; pinFails = 0; } throw userError('PIN galat hai.'); }
+  API.url = cfg.url; API.token = token; API.key = key; onUnlocked();
+}
+function checkIdle(){ if(!IN_APPS_SCRIPT && !isLocked() && Date.now() - lastActive > LOCK_AFTER_MS) lockApp(); }
+function startIdleWatch(){
+  if(IN_APPS_SCRIPT) return;
+  const bump = ()=>{ lastActive = Date.now(); };
+  ['pointerdown','keydown','touchstart','wheel'].forEach(ev=>document.addEventListener(ev, bump, {passive:true}));
+  document.addEventListener('mousemove', bump, {passive:true});
+  clearInterval(idleTimer);
+  idleTimer = setInterval(checkIdle, 15000);
+  document.getElementById('lockBtn').addEventListener('click', lockApp);
+}
+
+/* ---- install prompt, service worker + update flow, deep links, desktop shortcuts ---- */
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall = e; const b = document.getElementById('installBtn'); if(b) b.style.display = ''; });
+window.addEventListener('appinstalled', ()=>{ deferredInstall = null; const b = document.getElementById('installBtn'); if(b) b.style.display = 'none'; toast('App install ho gaya ✓'); });
+document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredInstall) return; deferredInstall.prompt(); try{ await deferredInstall.userChoice; }catch(_){} deferredInstall = null; document.getElementById('installBtn').style.display = 'none'; });
+function registerSW(){
+  if(IN_APPS_SCRIPT || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  const hadController = !!navigator.serviceWorker.controller; // first install must NOT trigger a reload
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    const offer = ()=>{ document.getElementById('updateBanner').style.display = 'flex'; document.getElementById('updateBtn').onclick = ()=>{ if(reg.waiting) reg.waiting.postMessage('SKIP_WAITING'); }; };
+    if(reg.waiting && navigator.serviceWorker.controller) offer();
+    reg.addEventListener('updatefound', ()=>{ const nw = reg.installing; if(nw) nw.addEventListener('statechange', ()=>{ if(nw.state === 'installed' && navigator.serviceWorker.controller) offer(); }); });
+    setInterval(()=>reg.update().catch(()=>{}), 60*60*1000);
+  }).catch(e=>console.warn('Service worker registration failed', e));
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(!hadController || reloading) return;
+    if(retryQueue.length){ toast('Naya version tayar — unsaved entries save hone ke baad reload karo'); return; } // never reload over unsaved work
+    reloading = true; location.reload();
+  });
+}
+function openTabFromUrl(){
+  const t = new URLSearchParams(location.search).get('tab'); // manifest shortcuts: ./?tab=daily
+  const li = t && document.querySelector('.tab[data-tab="' + t.replace(/[^a-z]/g,'') + '"]');
+  if(li) li.click();
+}
+document.addEventListener('keydown', e=>{ // desktop: Alt+1..7 switches tabs
+  if(!e.altKey || e.ctrlKey || e.metaKey || !state.loaded) return;
+  const m = /^Digit([1-7])$/.exec(e.code || ''); if(!m) return;
+  const li = document.querySelectorAll('.tab')[Number(m[1]) - 1]; if(li){ li.click(); e.preventDefault(); }
+});
+if(!IN_APPS_SCRIPT){ startIdleWatch(); registerSW(); }
+
+startApp();
+</script>
+</body>
+</html>
