@@ -1,0 +1,30 @@
+{
+  "id": "./",
+  "name": "Mazumder Infotech — Ledger",
+  "short_name": "Ledger",
+  "description": "Private business ledger — wallets, people udhaar, credit card, expenses, daily income and monthly summary, backed by your own Google Sheet.",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#F1F3F8",
+  "theme_color": "#0F172A",
+  "categories": ["finance", "business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Daily Ledger", "short_name": "Daily", "description": "Add today's income", "url": "./?tab=daily&source=shortcut", "icons": [{ "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "Expenses", "short_name": "Expenses", "description": "Log an expense", "url": "./?tab=expenses&source=shortcut", "icons": [{ "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "Wallets", "short_name": "Wallets", "description": "Open wallet passbooks", "url": "./?tab=wallets&source=shortcut", "icons": [{ "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "People Ledger", "short_name": "People", "description": "Udhaar and repayments", "url": "./?tab=people&source=shortcut", "icons": [{ "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

@@ -1,0 +1,16 @@
+# Netlify (optional). GitHub Pages ignores this file.
+# If anything ever misbehaves after a deploy, remove the Content-Security-Policy line first.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+/sw.js
+  Cache-Control: no-cache
+/manifest.json
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache

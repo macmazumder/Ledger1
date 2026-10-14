@@ -1,0 +1,16 @@
+{
+  "name": "mazumder-ledger",
+  "version": "5.0.0",
+  "private": true,
+  "description": "Mazumder Infotech Ledger: Google Apps Script + Google Sheets backend, installable desktop-first PWA front-end.",
+  "scripts": {
+    "build": "node tools/build.js",
+    "icons": "python3 tools/make_icons.py",
+    "serve": "python3 -m http.server 8080",
+    "test": "node tools/build.js --check && node test/static.test.js && node test/backend.test.js && node test/client_honest_ui.test.js && node test/e2e.test.js && node test/pwa.e2e.test.js",
+    "dist": "node tools/dist.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
